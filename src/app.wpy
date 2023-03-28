@@ -1,0 +1,270 @@
+<style lang="less">
+.container {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: space-between;
+  box-sizing: border-box;
+}
+
+.task-half-screen-dialog {
+  max-height: 99%;
+  padding: 0rpx;
+  :nth-child(3){
+    display: inline;
+  }
+  .weui-icon-btn_more {
+    display: none;
+  }
+}
+.weui-navigation-bar {
+  box-shadow: 0px 1px 32px 0px rgba(0,19,48,0.1);
+}
+.weui-navigation-bar__inner .weui-navigation-bar__center {
+  font-weight: bold;
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import eventHub from './common/eventHub';
+import vuex from '@wepy/x';
+import WXAPI, { setStorage, getStorage } from './wxapi/main';
+import weappJwtDecode, { weBtoa, weAtob } from './utils/weapp-jwt';
+import { isDepartmentAccount } from './utils/enums';
+
+wepy.use(vuex);
+
+wepy.app({
+  hooks: {
+    // App 级别 hook，对整个 App 生效
+    // 同时存在 Page hook 和 App hook 时，优先执行 Page hook，返回值再交由 App hook 处
+    'before-setData': function (dirty) {
+      // console.log('setData dirty: ', dirty);
+      return dirty;
+    }
+  },
+
+  onShow (e) {
+    const _this = this;
+    if (wx.canIUse('getUpdateManager')) {
+      const updateManager = wx.getUpdateManager()
+      updateManager.onCheckForUpdate(function (res) {
+        console.log('版本是否有更新--->', res)
+        if (res.hasUpdate) {
+          updateManager.onUpdateReady(function () {
+            wx.showModal({
+              title: '更新提示',
+              content: '新版本已经准备好，是否重启应用？',
+              success: function (res) {
+                // 用户点击确定按钮（选择更新版本）
+                if (res.confirm) {
+                  updateManager.applyUpdate();
+                   _this.login(e.path);
+                }
+                // 用户点击取消按钮（选择不更新）
+                if (res.cancel) {
+                  _this.login(e.path);
+                }
+              }
+            })
+          })
+          updateManager.onUpdateFailed(function () {
+            wx.showModal({
+              title: '已经有新版本了哟~',
+              content: '新版本已经上线啦~，请您删除当前小程序，重新搜索打开哟~'
+            })
+          })
+        } else {
+            _this.login(e.path);
+        }
+      })
+    } else {
+      wx.showModal({
+        title: '提示',
+        content: '当前微信版本过低，无法使用该功能，请升级到最新微信版本后重试。'
+      })
+    }
+
+    this.testAsync();
+    eventHub.$on('app-launch', (...args) => {
+      console.log('app-launch event emitted, the params are:');
+      console.log(args);
+    });
+  },
+
+  methods: {
+
+    sleep (s) {
+      return new Promise((resolve, reject) => {
+        setTimeout(() => {
+          resolve('promise resolved')
+        }, s * 1000)
+      })
+    },
+
+    async testAsync () {
+      let d = await this.sleep(3);
+      console.log(d);
+    },
+
+      // 定义登录方法token
+  login(e, func, params) {
+    const that = this;
+    wx.login({
+      success: wxRes => {
+          WXAPI.isBind({
+            jscode: wxRes.code
+          }).then(function(res) {
+            if (res.code === 0) { // 用户已绑定
+              wx.login({
+                success: newWxRes => {
+                  const loginParams = {
+                    grantType: "social",
+                    clientType: "miniapp",
+                    accountType: "thirdparty",
+                    jscode: newWxRes.code
+                  }
+                  WXAPI.login(loginParams).then(loginRes => {
+                    // 重新调用tokens接口成功
+                    if (loginRes.code === 0) {
+                      setStorage('accessInfo', loginRes.data);
+                      const { id } = weappJwtDecode(loginRes.data.token) || {};
+                      that.companyId = id;
+                      WXAPI.getUserInfo({ userId: that.companyId }).then(companyInfoRes => {
+                        if (companyInfoRes.code === 0) {
+                          setStorage('account', {...companyInfoRes.data, isDepartmentAccount: isDepartmentAccount(companyInfoRes.data.accountTypeId)})
+                          if (e.indexOf("pages/index") !== -1) {
+                            wx.switchTab({
+                              url: '/pages/home'
+                            })
+                          }
+                        }
+                      })
+                      setStorage('bindInfo', res.data.account);
+                      // 获取微信的信息（头像、名称、性别等）
+                      // wx.getUserInfo({
+                      //   success: function(e) {
+                      //     that.$options.globalData.userInfo = e.userInfo
+                      //   }
+                      // })
+                      func && func(params)
+                    } else {
+                      wx.showToast({
+                        title: "登录失败..",
+                        image: './static/images/error.png',
+                      });
+                      wx.redirectTo({
+                        url: '/pages/login'
+                      })
+                    }
+                  })
+                    }
+              })
+            } else if (res.code === 97) { //账号停用了
+              const account = getStorage('account');
+              wx.showModal({
+                title: "提示",
+                content: "该账号已停用，请重新绑定其他账号。",
+                showCancel: false,
+                confirmText: "解除绑定",
+                success: (e) => {
+                  if (e.confirm) {
+                    WXAPI.unbind({ userId: account && account.id }).then(function(e) {
+                      if (e.code === 0) {
+                        wx.redirectTo({
+                          url: '/pages/login'
+                        })
+                      } else {
+                        wx.showToast({
+                          title: e.message,
+                          image: "./static/images/error.png",
+                        })
+                      }
+                    }, function(e) {
+                      wx.showToast({
+                        title: "系统开了点小差...",
+                        image: "./static/images/error.png",
+                      })
+                    })
+                  }
+                }
+              })
+            } else { //未绑定账号wx
+              wx.redirectTo({
+                url: '/pages/login'
+              })
+            }
+          })
+      }
+    })
+  },
+  },
+
+});
+</script>
+<config>
+{
+    pages: [
+      'pages/index',
+      'pages/login',
+      'pages/home',
+      'pages/customer/index',
+      'pages/task/tasklist',
+      'pages/customer/addresultFalse',
+      'pages/customer/addresultTrue',
+      'pages/task/taskInfoList',
+      'pages/message',
+      'pages/customer/customerDetail/index',
+      'pages/customer/customerDetail/customerEdit',
+      'pages/customer/customerDetail/calloutDetail',
+      'pages/mine',
+      'pages/callbox/index',
+      'pages/callbox/callinConfig/editPrologue',
+      'pages/callbox/callinConfig/voiceSpeech',
+      'pages/callbox/callinConfig/callRecode',
+      'pages/callbox/callinConfig/callRecodeDetail',
+      'pages/callbox/callinConfig/knowledge',
+      'pages/callbox/callinConfig/editKnowledge',
+      'pages/templateList/list',
+      'pages/templateList/templateDetail',
+      'pages/templateList/soundRecord',
+      'pages/dataReport/callinReport',
+    ],
+    window: {
+      backgroundTextStyle: 'light',
+      navigationBarBackgroundColor: '#fff',
+      navigationBarTitleText: '同花顺智能客服',
+      navigationBarTextStyle: 'black'
+    },
+    useExtendedLib: {
+      weui: true
+    },
+    tabBar: {
+      "color": "#8E8E93",
+      "selectedColor": "#1876ff",
+      list: [
+        {
+            "text": "首页",
+            "pagePath": 'pages/home',
+            "iconPath": "/static/images/home.png",
+            "selectedIconPath": "/static/images/home_active.png",
+        },
+        {
+            "text": "消息",
+            "pagePath": 'pages/message',
+            "iconPath": "/static/images/message.png",
+            "selectedIconPath": "/static/images/message_active.png",
+            dot: true
+        },
+         {
+            "text": "我的",
+            "pagePath": 'pages/mine',
+            "iconPath": "/static/images/mine.png",
+            "selectedIconPath": "/static/images/mine_active.png",
+        }
+      ]
+    }
+}
+</config>

@@ -1,0 +1,321 @@
+<template>
+  <scroll-view>
+  <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="{{pageTitle}}"></mp-navigation-bar>
+    <div>
+      <view class="list_margin" v-if="pageType === 'add'">
+        <view class="list-items">
+          <view class="text-wrapper-margin">
+            <view class="title-text">客户提问</view>
+            <text class="star-text">*</text>
+          </view>
+          <view class="length-text">{{knowLedge.topicName.length}}/100</view>
+          <view>
+            <textarea class="textArea-q"
+              placeholder-class="placeholderText"
+              placeholder="请输入客户提问的问题"
+              auto-focus
+              :value="knowLedge.topicName"
+              @input="bindinputTopicName"
+            />
+          </view>
+
+        </view>
+        <view class="list-items">
+          <view class="text-wrapper-margin">
+            <view class="title-text">客服解答</view>
+            <text class="star-text">*</text>
+          </view>
+          <view>
+            <textarea class="textArea"
+              placeholder-class="placeholderText"
+              placeholder="请输入客服应答内容"
+              auto-focus
+              :value="knowLedge.answer"
+              @input="bindinputAnswer"
+            />
+          </view>
+          <view class="operate-div">
+            <view class="audio-div">
+              <callbox-audio type="editAudition" width="32rpx" height="32rpx" :params="{voiceType: 23, voiceText: knowLedge.answer}" :audioId="-1">
+              </callbox-audio>
+              <view class="label">试听</view>
+            </view>
+            <view class="div-length">{{knowLedge.answer.length}}/100</view>
+          </view>
+        </view>
+      </view>
+      <view class="list_margin" v-if="pageType === 'edit'">
+        <view class="list-items">
+          <view class="text-wrapper-margin">
+            <view class="title-text">客户提问：{{knowLedge.topicName}}</view>
+          </view>
+          <view>
+            <textarea class="textArea"
+                      placeholder="请输入客服应答内容"
+                      placeholder-class="placeholderText"
+                      auto-focus
+                      :value="knowLedge.answer"
+                      @input="bindinputAnswer"
+            />
+          </view>
+          <view class="operate-div">
+            <view class="audio-div">
+              <callbox-audio type="editAudition" width="32rpx" height="32rpx"
+                           :params="{voiceType: 23, voiceText: knowLedge.answer}"
+                           :audioId="-1">
+              </callbox-audio><view class="label">试听</view>
+            </view>
+            <view class="div-length">{{knowLedge.answer.length}}/100</view>
+          </view>
+        </view>
+      </view>
+      <view class="opt-div" :style="{height: pageType === 'edit' ?  '178rpx' : '128rpx'}">
+        <button type="primary" class="add-add-button" @tap="onSubmit">
+          <view class="button-text">保存</view>
+        </button>
+        <view v-if="pageType === 'edit'"><view class="text-deafult" @tap="backTextFunc">恢复默认</view></view>
+      </view>
+    </div>
+  </scroll-view>
+</template>
+<script>
+import wepy from '@wepy/core'
+import store from '@/store/index';
+import { mapActions, mapState } from '@wepy/x'
+import eventHub from '@/common/eventHub';
+
+wepy.page({
+  store,
+  data: {
+    pageTitle: '新增知识库',
+    knowLedge: {
+      topicName: '',
+      answer: '',
+      topicId: null,
+    },
+    pageType: '',
+    defaultText: '',
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+    }),
+  },
+  methods: {
+    ...mapActions({
+      fetchAddKnowledge:'callbox/fetchAddKnowledge',
+      fetchEditKnowledge:'callbox/fetchEditKnowledge'
+    }),
+    bindinputTopicName(e) {
+      const value=e.$wx.detail.value;
+      if (value.length > 100) {
+        this.knowLedge.topicName = '';
+        this.knowLedge.topicName = value.substring(0, 100);
+      } else {
+        this.knowLedge.topicName = '';
+        this.knowLedge.topicName = value;
+      }
+    },
+    bindinputAnswer(e) {
+      const value=e.$wx.detail.value;
+      if (value.length > 100) {
+        this.knowLedge.answer = '';
+        this.knowLedge.answer = value.substring(0, 100);
+      } else {
+        this.knowLedge.answer = '';
+        this.knowLedge.answer = value;
+      }
+    },
+    async onSubmit() {
+      if (this.knowLedge.topicName && this.knowLedge.answer) {
+        wx.showLoading({
+          title: '保存中',
+          mask: true
+        });
+        const typeDict = {
+          add: 'fetchAddKnowledge',
+          edit: 'fetchEditKnowledge',
+        }
+        const res = await this[typeDict[this.pageType]]({
+            source: this.currentBox.callinConfig.source,
+            answer: this.knowLedge.answer,
+            topicName: this.knowLedge.topicName,
+            ...(this.pageType === 'edit' ? {topicId: this.knowLedge.topicId} : null),
+        });
+        if (res.code === 0) {
+          wx.hideLoading()
+          wx.showToast({
+            title: `保存成功！`,
+            icon: 'success',
+            duration: 1000,
+          });
+          setTimeout(() => {
+            wx.navigateBack({
+              success: (res)=> {
+                eventHub.$emit('refreshGetKnowLedgeList');
+              },
+            });
+          }, 1000);
+        } else {
+          wx.hideLoading();
+          wx.showToast({
+            title: res.msg,
+            icon: 'none'
+          });
+        }
+      } else {
+        wx.showToast({
+          title: '内容不能为空',
+          icon: 'none',
+        });
+      }
+    },
+    backTextFunc() {
+      this.knowLedge.answer = this.defaultText;
+    }
+  },
+  onLoad(option) {
+    const { type, topicName, answer, topicId } = option;
+    this.pageType = type;
+    if (type === 'edit') {
+      this.pageTitle = '编辑知识库';
+      this.defaultText = answer;
+      this.knowLedge = { topicName, answer, topicId };
+    }
+  },
+});
+</script>
+<style>
+.opt-div {
+  position: fixed;
+  bottom: 0rpx;
+  padding: 0rpx 32rpx;
+  width: 100%;
+  line-height: 104rpx;
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0,19,48,0.10);
+  border-radius: 0 0 16rpx 16rpx;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0,0,0,0.85);
+  padding-bottom: calc( constant(safe-area-inset-bottom));
+  padding-bottom: calc( env(safe-area-inset-bottom));
+}
+@supports not(constant(safe-area-inset-bottom)){
+  page{
+    padding-bottom: 84rpx;
+  }
+}
+
+.add-add-button {
+  line-height: 78rpx;
+  background-image: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+  font-size: 28rpx;
+  color: #FFFFFF;
+  border-radius: 48rpx;
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  width: 670rpx;
+  margin: 16rpx 10rpx;
+}
+
+.list_margin {
+  margin: 32rpx 0 0 32rpx;
+}
+.list-items {
+  box-shadow: 0rpx 1rpx 32rpx 0rpx rgba(0,19,48,0.1);
+  background-color: rgba(255,255,255,1.000000);
+  border-radius: 16rpx;
+  width: 686rpx;
+  height: auto;
+  margin-bottom: 32rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-center;
+}
+.textArea-q {
+  font-size: 28rpx;
+  padding: 10rpx 30rpx 20rpx 30rpx;
+  width: 620rpx;
+  height: 280rpx;
+}
+.textArea {
+  font-size: 28rpx;
+  padding: 5rpx 30rpx 20rpx 30rpx;
+  width: 620rpx;
+  height: 280rpx;
+}
+.text-wrapper-margin {
+  margin: 32rpx 32rpx 0 32rpx;
+  display: flex;
+}
+.title-text {
+  color: rgba(0,0,0,0.85);
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium;
+  line-height: 40rpx;
+  font-weight: 600;
+  word-wrap: break-word;
+}
+.star-text {
+  color: rgba(255,91,82,0.85);
+  font-size: 32rpx;
+}
+.operate-div {
+  width: 622rpx;
+  height: 40rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  margin: 8rpx 0 32rpx 32rpx;
+}
+.length-text {
+  color: rgba(0,0,0,0.25);
+  font-size: 28rpx;
+  margin: -52rpx 0 0 578rpx
+}
+.div-length {
+  color: rgba(0,0,0,0.25);
+  font-size: 28rpx;
+}
+.audio-div {
+  display: flex;
+  align-items: center;
+}
+.label {
+  margin-left: 8rpx;
+  color: #1876ff;
+  font-size: 28rpx;
+}
+.button-text {
+  width: 128rpx;
+  height: 45rpx;
+  overflow-wrap: break-word;
+  color: rgba(255,255,255,1);
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 45rpx;
+  margin: 26rpx 0 0 271rpx;
+}
+.placeholderText {
+  color: rgba(0, 0, 0, 0.2500);
+}
+.text-deafult {
+  color: rgba(0,0,0,0.65);
+  margin-left: 290rpx;
+  margin-top: -34rpx;
+  font-size: 24rpx;
+}
+</style>
+<config>
+{
+  navigationStyle: 'custom',
+  usingComponents: {
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+      "callbox-audio": "../audio/index.wpy",
+  },
+}
+</config>

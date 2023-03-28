@@ -1,0 +1,84 @@
+<style lang="less">
+.record-content {
+    background: #edf0f4;
+    min-height: 100vh;
+}
+.record-operate {
+    position: fixed;
+    bottom: 0;
+    left: 0;
+    right: 0;
+}
+
+</style>
+
+<template>
+    <view class="record-content">
+        <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="录音"></mp-navigation-bar>
+        <view class="record-card">
+            <soundRecordCard
+                :key="voiceDetail.id"
+                v-bind:voiceDetail="voiceDetail"
+            />
+        </view>
+        <view class="record-operate">
+            <recordOperate
+                :key="voiceDetail.id"
+                v-bind:voiceDetail="voiceDetail"
+                :templateId="templateId"
+                :voiceSetId="voiceSetId"
+                @uploadVoice="uploadVoice"
+            />
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from '@wepy/core'
+    import eventHub from '../../common/eventHub';
+    import { mapState } from '@wepy/x';
+    import store from '../../store';
+    import WXAPI, { getStorage } from '../../wxapi/main';
+    import { concatUrlParam } from '../../utils/stringUtil';
+
+    wepy.page({
+        store,
+        data: {
+            pageInfo: { pageSize: 10, pageNum: 1 },
+            templateId: '',
+            voiceSetId: '',
+            audioInfo: {}
+        },
+        computed: {
+            ...mapState({
+              voiceDetail: (state) => state.template.voiceDetail,
+            }),
+        },
+        methods: {
+             
+        },
+        onLoad(options) {
+            const { templateId, voiceSetId } = options;
+            this.templateId = templateId;
+            this.voiceSetId = voiceSetId;
+            console.log('optins==>', options)
+        }
+        
+  });
+
+</script>
+
+<config>
+{
+    navigationBarTitleText: '话术模板',
+    navigationStyle: 'custom',
+    usingComponents: {
+        "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+        "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+        "soundRecordCard": './soundRecordCard',
+        "recordOperate": '../../components/recordOperate'
+    },
+}
+</config>
+
+

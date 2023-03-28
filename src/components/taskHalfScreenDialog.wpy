@@ -1,0 +1,61 @@
+<template>
+  <mp-half-screen-dialog extClass="task-half-screen-dialog" :show="show" :closabled="false" :maskClosable="false">
+    <div slot="title" class="add-task-title-div"  catchtouchmove="preventTouchMove">
+      <span class="add-task-title">{{title}}</span>
+      <img src="../assist/customer/shut-down.png" class="add-task-img" @tap="onCloseTaskDialog"/>
+    </div>
+    <div slot="desc">
+      <slot name="desc"></slot>
+    </div>
+  </mp-half-screen-dialog>
+</template>
+
+<style lang="less" scoped>
+
+  .add-task-title-div {
+    padding:0 40rpx;
+    height: 80rpx;
+     line-height: 80rpx;
+display: flex;
+justify-content: space-between;
+align-items: center;
+
+    .add-task-img {
+      width: 35rpx;
+      height: 35rpx;
+    }
+  }
+</style>
+
+<script>
+  import wepy from '@wepy/core'
+
+  wepy.component({
+    options: {
+      multipleSlots: true,
+    },
+    data: {
+      createStepIndex: 1,
+      showCreateTemplate: false,
+    },
+    methods: {
+     preventTouchMove(){},
+
+      onCloseTaskDialog() {
+        this.$emit('close');
+      },
+    },
+    props: {
+      show: { type: Boolean, default: false },
+      title: { type: String, default: "" }
+    }
+  });
+</script>
+<config>
+{
+  usingComponents: {
+    "mp-half-screen-dialog": "module:weui-miniprogram/miniprogram_dist/half-screen-dialog/half-screen-dialog",
+  }
+}
+</config>
+

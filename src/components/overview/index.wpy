@@ -1,0 +1,185 @@
+<style lang="less" scoped>
+.data-overview {
+    margin-bottom: 32rpx;
+    padding: 32rpx;
+    background: #FFFFFF;
+    box-shadow: 0 2rpx 64rpx 0 rgba(0,19,48,0.10);
+    border-radius: 16rpx;
+
+    .header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        margin: 0 0 20rpx 0;
+
+        .tip-title {
+            font-size: 32rpx;
+            color: rgba(0,0,0,0.85);
+            font-weight: 600;
+        }
+        .date-condition {
+            display: flex;
+            align-items: center;
+            margin-bottom: 1rpx;
+            border: 1rpx solid #1876FF;
+            border-radius: 8rpx;
+            color: #1876ff;
+            width: 144rpx;
+            height: 40rpx;
+            // font-size: 20rpx;
+
+            .today, .yesterday {
+                flex: 1;
+                font-size: 20rpx;
+                color: #277FFF;
+                letter-spacing: 0;
+                text-align: center;
+                font-weight: 400;
+                height: 40rpx;
+                line-height: 40rpx;
+            }
+
+            .active {
+                color: #ffffff;
+                background-color: #1876ff;
+            }
+
+            .today.active {
+                border-radius: 8rpx 0 0 8rpx;
+            }
+
+            .yesterday.active {
+                border-radius: 0 8rpx 8rpx 0;
+            }
+        }
+    }
+}
+</style>
+<template>
+    <view class="data-overview">
+        <view class="header">
+            <text class="tip-title">数据概览</text>
+            <view class="date-condition">
+                <label bind:tap="dateChangeHandler" data-date="today" class="today {{ activeItem === 'today' ? 'active' : '' }}">今日</label>
+                <label bind:tap="dateChangeHandler" data-date="yesterday" class="yesterday {{ activeItem === 'yesterday' ? 'active' : '' }}">昨日</label>
+            </view>
+        </view>
+        <!-- <callout-data wx:if="{{buyInfo.callout}}" :hasCalloutView="hasCalloutView" :calloutData="calloutData"></callout-data> -->
+        <callout-data :calloutData="calloutData"></callout-data>
+        <callin-data wx:if="{{buyInfo.callbox}}" :hasSourceView="hasSourceView" :sources="sources" @change="sourceChange" :sourceData="sourceData"></callin-data>
+    </view>
+</template>
+<script>
+import wepy from '@wepy/core';
+import { mapState } from '@wepy/x';
+import { getTimeDistance, hasAuthority } from '../../utils/utils';
+import store from '../../store/index';
+import { getStorage } from '@/wxapi/main';
+
+wepy.component({
+    store,
+    hooks: {
+    },
+    props: {
+        buyInfo: {type: Object },
+        hasCalloutView: { type: Boolean, default: false }, // 是否拥有外呼数据总览权限
+        hasSourceView: { type: Boolean, default: false }, // 是否拥有知识库数据总览权限
+    },
+    data: {
+        activeItem: 'today',
+        currentSource: 0,
+    },
+    computed: {
+        ...mapState({
+            calloutData: state => state.overview.calloutData,
+            sources: state => state.overview.sources,
+            sourceData: state => state.overview.sourceData,
+        })
+    },
+    watch: {
+        hasCalloutView(val) {
+            if(val) {
+                this.dateChangeHandler();
+            }
+        },
+        hasSourceView(val) {
+            if (val) {
+                const userInfo = getStorage('account') || {};
+                const account = userInfo.accountInfo || {};
+                const deptIds = userInfo.department ? userInfo.department.map(({id}) => id) : void 0;
+                this.$store.dispatch({
+                    type: 'overview/getSources',
+                    payload: {
+                        companyId: account.companyId,
+                        limit: -1,
+                        ...(deptIds ? { deptIds } : null)
+                    },
+                    cb: sources => {
+                        if (sources.length) {
+                            const { source } = sources[0];
+                            this.getSourceData(source);
+                        }
+                    }
+                })
+            }
+        }
+    },
+    methods:{
+        dateChangeHandler(event) {
+            const activeItem = event ? event.target.dataset.date : 'today';
+            const [startDate, endDate] = getTimeDistance(activeItem);
+            this.activeItem = activeItem;
+            if (this.hasCalloutView) {
+                this.$store.dispatch({
+                    type: 'overview/getCalloutData',
+                    payload: {
+                        startDate: startDate.format('YYYY-MM-DD'),
+                        endDate: endDate.format('YYYY-MM-DD'),
+                        accountType: 2
+                    }
+                })
+            }
+            try {
+                const { source } = this.sources[this.currentSource];
+                this.getSourceData(source);
+            } catch (e) {
+                
+            }
+        },
+
+        getSourceData(source) {
+            const [startDate, endDate] = getTimeDistance(this.activeItem);
+            this.$store.dispatch({
+                type: 'overview/getSourceData',
+                payload: {
+                    params: {
+                        startTime: startDate.format('YYYY-MM-DD'),
+                        endTime: endDate.format('YYYY-MM-DD'),
+                    },
+                    header: {
+                        source
+                    },
+                    current: `${this.activeItem}${this.currentSource}`
+                }
+            });
+        },
+
+        sourceChange(item) {
+            const { source } = this.sources[item.current];
+            this.currentSource = item.current;
+            this.$nextTick(() => {
+                this.getSourceData(source)
+            })
+        }
+    }
+})
+</script>
+<config>
+{
+  "navigationBarTitleText": "wepy",
+  "usingComponents": {
+    "callin-data": "~Components/overview/callin",
+    "callout-data": "~Components/overview/callout",
+  }
+}
+</config>

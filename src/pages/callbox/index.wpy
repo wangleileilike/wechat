@@ -1,0 +1,166 @@
+<style lang="less" scoped>
+.callbox-detail-container {
+    display: flex;
+    flex-direction: column;
+
+    .custom-scroll {
+        flex: 1;
+    }
+    
+    .custom-tabbar {
+        // height: 115rpx;
+        position: fixed;
+        bottom: 0;
+        left: 0;
+        right: 0;
+        width: 100%;
+    }
+}
+.weui-tabbar__label {
+    color: #8E8E93;
+}
+.weui-bar__item_on {
+    .weui-tabbar__label {
+        color: #1876ff !important;
+    }
+}
+.no-permission{
+  text-align: center;
+  margin-top:50rpx;
+  color: rgba(0,0,0,0.65);
+  .image{
+    width: 632rpx;
+    height: 632rpx;
+  }
+}
+</style>
+<template>
+    <scroll-view class="callbox-detail-container">
+        <mp-navigation-bar color="{{'rgb(0, 0, 0)'}}" background="white" title="智能电话机" delta="0" @back="backToBeforePage"></mp-navigation-bar>
+        <view v-show="activeItem === 'callin'">
+            <callin-config wx:if="{{isCallIn}}"></callin-config>
+            <view wx:else class="no-permission">
+              <image class="image"  src="/static/images/no-data.png"></image>
+              <view>暂无产品权限</view>
+            </view>
+        </view>
+        <view v-show="activeItem === 'callout'">
+            <callout-config wx:if="{{isCallOut}}"></callout-config>
+            <view wx:else class="no-permission">
+              <image class="image"  src="/static/images/no-data.png"></image>
+              <view>暂无产品权限</view>
+            </view>
+        </view>
+        <view v-show="activeItem === 'info'">
+            <callbox-info></callbox-info>
+        </view>
+        <mp-tabbar ext-class="custom-tabbar" :current="activeItemIndex" list="{{tabList}}" bindchange="tabChange" />
+
+    </scroll-view>
+</template>
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '@/store/index';
+import {  hasAuthority } from '@/utils/utils';
+import eventHub from '@/common/eventHub';
+import { getStorage } from '@/wxapi/main';
+
+wepy.page({
+    store,
+    data: {
+        activeItem: 'callin', // call
+        activeItemIndex: 0,
+        callboxEdit: false,
+        tabList: [
+        {
+            "text": "呼入配置", 
+            "iconPath": "/static/images/callbox/in.png",
+            "selectedIconPath": "/static/images/callbox/in-active.png",
+            "key": "callin"
+        },
+        {
+            "text": "呼出配置",
+            "iconPath": "/static/images/callbox/out.png",
+            "selectedIconPath": "/static/images/callbox/out-active.png",
+            "key": "callout"
+        },
+        {
+            "text": "电话机信息",
+            "iconPath": "/static/images/callbox/info.png",
+            "selectedIconPath": "/static/images/callbox/info-active.png",
+            "key": "info"
+        }
+      ]
+    },
+    computed:{
+      ...mapState({
+        currentBox: (state) => state.callbox.currentBox,
+        openingRemarks: (state) => state.callbox.openingRemarks
+      }),
+      isCallIn() {
+      let callIn = false
+      if(this.currentBox && this.currentBox.callinConfig){
+        this.currentBox.callinConfig.source ? callIn = true : callIn = false
+      }
+      return this.callboxEdit && callIn
+    },
+    isCallOut() {
+      let callOut=false;
+      if(this.currentBox && this.currentBox.calloutConfig){
+        this.currentBox.calloutConfig.robotId ? callOut = true : callOut = false
+      }
+      return this.callboxEdit && callOut
+    },
+    },
+    methods: {
+        ...mapActions({
+          fetchCallboxInfo:'callbox/fetchCallboxInfo', // 查询电话机信息
+        }),
+        tabChange({ $wx: { detail: { item: { key, ...rest } } } }) {
+            this.activeItem = key;
+            this.activeItemIndex = this.tabList.findIndex(item => item.key === key); 
+            eventHub.$emit('stopAudio');
+
+        },
+        backToBeforePage() {
+          const pages = getCurrentPages();
+          const url = "/pages/home";
+          if (pages && pages.length > 1) {
+            wx.navigateBack();
+          } else {
+            wx.switchTab({
+              url: url
+            })
+          }
+      }
+    },
+    onLoad(options) {
+      const { callboxId } = options;
+      if (callboxId) {
+        this.activeItem = "info";
+        this.activeItemIndex = 2;
+        this.fetchCallboxInfo({ callboxIds: callboxId });
+      }
+    },
+    created() {
+      const account = getStorage('account');
+      const authorities = account && account.authorities;
+      this.callboxEdit = hasAuthority('ROLE_callbox_config:edit')(authorities);
+    }
+})
+</script>
+<config>
+{
+    navigationBarTitleText: '智能电话机',
+    navigationBarBackgroundColor: '#ffffff',
+    navigationStyle: 'custom',
+    usingComponents: {
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+      "mp-tabbar": "module:weui-miniprogram/miniprogram_dist/tabbar/tabbar",
+      "callin-config": "./callinConfig/index",
+      "callout-config": "./calloutConfig",
+      "callbox-info": "./callboxInfo",
+    }
+}
+</config>

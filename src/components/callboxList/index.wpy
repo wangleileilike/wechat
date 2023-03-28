@@ -1,0 +1,94 @@
+<style lang="less" scoped>
+.callbox-list {
+    margin-bottom: 32rpx;
+    padding: 32rpx;
+    background: #FFFFFF;
+    box-shadow: 0 2rpx 64rpx 0 rgba(0,19,48,0.10);
+    border-radius: 16rpx;
+
+    .header {
+        display: flex;
+        align-items: center;
+        margin: 0 0 20rpx 0;
+
+        .tip-title {
+            font-size: 32rpx;
+            color: rgba(0,0,0,0.85);
+            font-weight: 600;
+        }
+    }
+    .swiper-container {
+        height: 174rpx;
+
+        .swiper-item {
+            width: 256rpx !important;
+        }
+    }
+    .callbox-empty {
+        height: 172rpx;
+        text-align: center;
+        line-height: 172rpx;
+        font-size: 24rpx;
+        color: rgba(0, 0, 0, 0.45);
+        font-weight: 400;
+    }
+}
+</style>
+<template>
+    <view class="callbox-list">
+        <view class="header">
+            <text class="tip-title">智能电话机</text>
+        </view>
+        <block wx:if="{{hasBoxAuth}}">
+            <swiper class="swiper-container" wx:if="{{callboxes && callboxes.length > 0}}">
+                <block wx:for="{{callboxes}}" wx:key="id">
+                    <swiper-item class="swiper-item">
+                        <callbox-item :callbox="item" :dispatch="$store.dispatch" @jump="jumpHandle"></callbox-item>
+                    </swiper-item>
+                </block>
+            </swiper>
+            <view wx:else class="callbox-empty">暂无数据</view>
+        </block>
+        <block wx:else>
+            <view class="callbox-empty">暂无权限</view>
+        </block>
+    </view>
+</template>
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '../../store/index';
+
+wepy.component({
+    store,
+    hooks: { },
+    props: {
+        hasBoxAuth: {type: Boolean, required: true }
+    },
+    data: {
+        pageNo: 1
+    },
+    computed: {
+        ...mapState({
+            callboxes: state => state.callbox.callboxes
+        })
+    },
+    methods:{
+        jumpHandle(callbox) {
+            this.$store.commit('callbox/UPDATE_CURRENT_BOX', callbox);
+            wx.navigateTo({
+                url: `/pages/callbox/index`
+            });
+        }
+    },
+    ready() { },
+})
+</script>
+<config>
+{
+  "navigationBarTitleText": "wepy",
+  "usingComponents": {
+    "callbox-item": "./callboxItem"
+  }
+}
+</config>

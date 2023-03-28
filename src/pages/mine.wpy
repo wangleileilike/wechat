@@ -1,0 +1,213 @@
+<style lang="less">
+
+.loginWrap {
+  background-image: linear-gradient(180deg, #1876FF 0%, rgba(24,118,255,0.00) 100%);
+}
+
+.avatarWrap {
+  display: flex;
+  justify-content: space-around;
+  align-items: center;
+  height: 300rpx;
+  .userinfo-avatar {
+    width: 198rpx;
+    height: 198rpx;
+    border-radius: 100%;
+    overflow: hidden;
+  }
+  .userinfo-nickname {
+    font-family: PingFangSC-Medium;
+    font-size: 60rpx;
+    color: rgba(255,255,255,0.99);
+    letter-spacing: 0;
+    text-align: right;
+  }
+}
+
+.infoWrap {
+    background: #FFFFFF;
+    box-shadow: 0 -2rpx 64rpx 0 rgba(0,19,48,0.10);
+    border-radius: 40rpx 40rpx 0 0;
+    box-sizing: border-box;
+    padding: 43rpx 40rpx 0 40rpx;
+    .my-item {
+      font-family: PingFangSC-Regular;
+      font-size: 28rpx;
+      height: 112rpx;
+      color: rgba(0,0,0,0.65);
+      letter-spacing: 0;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      .imgLeft {
+        display: flex;
+        height: 100%;
+        align-items: center;
+      }
+      >text {
+        font-family: PingFangSC-Regular;
+        font-size: 28rpx;
+        color: rgba(0,0,0,0.85);
+        letter-spacing: 0;
+        max-width: 70%;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+    }
+
+    .my-icon {
+      width: 48rpx;
+      height: 48rpx;
+      margin-right: 16rpx;
+    }
+}
+    .btnView {
+      background: #FFFFFF;
+      .unbindBtn {
+        border-radius: 48rpx;
+        width: 82%;
+        margin-top: 100rpx;
+        display: block;
+        border: 1rpx solid #1876FF;
+        color: #1876FF;
+        font-family: PingFangSC-Medium;
+        font-size: 32rpx;
+      }
+    }
+
+</style>
+<template>
+    <div>
+      <mp-navigation-bar color="white" background="#1876FF" title="个人中心" back="{{false}}"></mp-navigation-bar>
+      <div class="loginWrap">
+        <view class="avatarWrap">
+          <div class="userinfo-nickname">
+            <open-data type="userNickName"></open-data>
+          </div>
+            <open-data class="userinfo-avatar" type="userAvatarUrl"></open-data>
+        </view>
+        <view class="infoWrap">
+          <view class="my-item">
+            <label class="imgLeft">
+              <image class="my-icon" src="/static/images/the_company.png"></image>
+              <text>公司</text>
+            </label>
+            <text class="my-text">{{bindInfo.companyName}}</text>
+          </view>
+          <view class="my-item">
+            <label class="imgLeft">
+              <image class="my-icon" src="/static/images/department.png"></image>
+              <text>部门</text>
+            </label>
+            <text class="my-text">{{departments}}</text>
+          </view>
+          <view class="my-item">
+            <label class="imgLeft">
+              <image class="my-icon" src="/static/images/position.png"></image>
+              <text>职位</text>
+            </label>
+            <text class="my-text">{{roleNames}}</text>
+          </view>
+          <view class="my-item">
+            <label class="imgLeft">
+              <image class="my-icon" src="/static/images/name.png"></image>
+              <text>姓名</text>
+            </label>
+            <text class="my-text">{{bindInfo.username || account.username || ''}}</text>
+          </view>
+        </view>
+      </div>
+      <view class="btnView">
+        <button class="unbindBtn" @click="unbindAccount" size="default" loading="{{loading}}">解除绑定</button>
+      </view>
+    </div>
+</template>
+
+<script>
+  import wepy from '@wepy/core'
+  import eventHub from '../common/eventHub';
+  import { mapState } from '@wepy/x';
+  import store from '../store';
+  import WXAPI, { getStorage } from '../wxapi/main';
+
+  wepy.page({
+    store,
+    hooks: {
+      // Page 级别 hook, 只对当前 Page 的 setData 生效。
+      'before-setData': function (dirty) {
+        return dirty;
+      }
+    },
+    data: {
+       userInfo: {
+         nickname: '加载中...'
+       },
+       bindInfo: {},
+       account: {},
+       departments: []
+    },
+    computed: {
+      roleNames() {
+        const { roleNames, roleName } = this.bindInfo;
+        return (roleNames ? roleNames : roleName ? [roleName] : []).join(',')
+      }
+    },
+    methods: {
+      departments2String(departments) {
+         return (departments || []).map(item => item.name).join();
+        },
+      // 解除绑定并退出
+      unbindAccount() {
+         wx.showModal({
+          title: "",
+          content: "请确认是否将微信账号与同花顺外呼账号解除绑定?",
+          cancelText: "不了",
+          confirmText: "解绑",
+          success: (res) => {
+            if (res.confirm) {
+              const account = getStorage('account');
+              WXAPI.unbind({ userId: account && account.id}).then(function(e) {
+                if (e.code === 0) {
+                  WXAPI.loginOut().then(loginOutRes => {
+                      wx.removeStorage({
+                        key: 'callout-accessInfo',
+                        success (storageRes) {
+                          console.info("清除storage的token信息成功!")
+                        }
+                      })
+                      wx.reLaunch({
+                        url: "/pages/login"
+                      })
+                  })
+                } else {
+                  wx.showToast({
+                    title: e.message,
+                    image: "../static/images/error.png",
+                  })
+                }
+              })
+            }
+          }
+        })
+      },
+    },
+    created () {
+      this.userInfo = getStorage('userInfo');
+      this.bindInfo = getStorage('bindInfo');
+      this.account = getStorage('account');
+      this.departments = this.departments2String(this.bindInfo && this.bindInfo.departments);
+    }
+  });
+</script>
+<config>
+{
+    navigationBarTitleText: '个人中心',
+    navigationBarBackgroundColor: '#1876FF',
+    navigationBarTextStyle: 'white',
+    navigationStyle: 'custom',
+    usingComponents: {
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar"
+    },
+}
+</config>

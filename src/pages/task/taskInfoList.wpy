@@ -1,0 +1,738 @@
+<style lang="less" scoped>
+.top {
+  background: #ffffff;
+  box-shadow: 0 2px 64px 0 rgba(0, 19, 48, 0.1);
+  height: 96rpx;
+  display: flex;
+  position: fixed;
+  z-index: 99;
+}
+
+.template-infoWrap {
+  min-height: 100vh;
+  overflow: hidden;
+}
+
+.search-button {
+  width: 295rpx;
+  height: 96rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.drop {
+  width: 24rpx;
+  height: 24rpx;
+  margin-left: 8rpx;
+}
+
+.search {
+  padding: 0 32rpx;
+  display: flex;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  box-sizing: border-box;
+}
+.search-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 96rpx;
+  height: 96rpx;
+  image {
+    width: 35rpx;
+    height: 35rpx;
+  }
+}
+
+.under {
+  background: #fcfdff;
+  padding-top: 32rpx;
+  box-sizing: border-box;
+  margin-top: 96rpx;
+}
+
+.card-option {
+  display: flex;
+  justify-content: center;
+  margin-bottom: 32rpx;
+  width: 750rpx;
+}
+
+.card {
+  width: 686rpx;
+  background: #ffffff;
+  box-shadow: 0 2px 64px 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16px;
+}
+
+.card-status {
+  display: flex;
+  margin-top: 32rpx;
+  height: 45rpx;
+  align-items: center;
+}
+
+.card-point {
+  height: 24rpx;
+  width: 16rpx;
+  background: #ff5b52;
+  border-radius: 0 8rpx 8rpx 0;
+}
+
+.card-point-success {
+  background: #48d271;
+}
+
+.card-time {
+  font-family: PingFangSC-Medium;
+  font-size: 32rpx;
+  color: rgba(0, 0, 0, 0.85);
+  margin-left: 32rpx;
+  width: 277rpx;
+}
+
+.card-label {
+  background: rgba(255, 91, 82, 0.06);
+  border: 1rpx solid #ff5b52;
+  border-radius: 8rpx;
+  padding: 4rpx 8rpx;
+  font-family: PingFangSC-Medium;
+  font-size: 20rpx;
+  color: #ff5b52;
+  text-align: center;
+}
+
+.card-label-father {
+  display: flex;
+  justify-content: space-between;
+  width: 628rpx;
+  align-items: center;
+}
+
+.card-label-success {
+  font-family: PingFangSC-Medium;
+  font-size: 20rpx;
+  color: #48d271;
+  text-align: center;
+  background: rgba(72, 210, 113, 0.06);
+  border: 1rpx solid #48d271;
+  border-radius: 8rpx;
+}
+
+.card-name {
+  margin-left: 48rpx;
+  margin-right: 40rpx;
+  margin-top: 24rpx;
+
+  display: flex;
+  justify-content: space-between;
+
+  :nth-child(1) {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  :nth-child(2) {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.65);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 465rpx;
+  }
+}
+
+.card-template {
+  display: flex;
+  margin-left: 48rpx;
+  margin-right: 40rpx;
+  margin-top: 24rpx;
+  justify-content: space-between;
+  :nth-child(1) {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.45);
+  }
+
+  :nth-child(2) {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.65);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 465rpx;
+  }
+}
+
+.card-info {
+  margin-top: 24rpx;
+  margin-bottom: 32rpx;
+  margin-left: 48rpx;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0, 0, 0, 0.65);
+}
+
+.img-back {
+  transform: scaleX(-1);
+  margin-left: 406rpx;
+  width: 24rpx;
+  height: 24rpx;
+}
+
+.call-item {
+  padding: 43rpx 23.5rpx 0 40rpx;
+  min-height: 178rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  margin-bottom: 25rpx;
+}
+.call-result {
+  transition: all 0.3s ease-in-out;
+  position: absolute;
+  width: 750rpx;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  font-family: PingFangSC-Regular;
+  font-size: 24rpx;
+  margin-top: 96rpx;
+  z-index: 99;
+}
+.call-unselect {
+  background: rgba(24, 118, 255, 0.06);
+  border-radius: 12rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 56rpx;
+  font-family: PingFangSC-Regular;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 16rpx;
+  margin-right: 15.5rpx;
+  font-size: 24rpx;
+  box-sizing: border-box;
+  padding: 12rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.search-on {
+  font-family: PingFangSC-Medium;
+  font-size: 28rpx;
+  color: #1876ff;
+}
+
+.call-button {
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  :nth-child(1) {
+    width: 323rpx;
+    height: 88rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 30rpx;
+    letter-spacing: 0;
+    margin-left: 40rpx;
+    border: 1rpx solid #d1d8e1;
+  }
+  :nth-child(2) {
+    width: 323rpx;
+    height: 88rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 30rpx;
+    letter-spacing: 0;
+    margin-right: 40rpx;
+    background: #1876ff;
+
+    color: #ffffff;
+  }
+}
+
+.button-on {
+  font-family: PingFangSC-Medium;
+  font-size: 28rpx;
+  color: #1876ff;
+}
+
+.intention-unselect {
+  height: 112rpx;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0, 0, 0, 0.85);
+  letter-spacing: 0;
+  line-height: 112rpx;
+  border-top: 1rpx solid rgba(24, 118, 255, 0.08);
+}
+
+.intention-item {
+  padding: 0 40rpx;
+}
+
+.intention-select {
+  width: 40rpx;
+  height: 40rpx;
+  margin-left: 520rpx;
+  vertical-align: middle;
+}
+
+.wrap {
+  height: 100%;
+  overflow: hidden;
+  width: 750rpx;
+  z-index: 98;
+  position: absolute;
+}
+
+// Page {
+//   overflow-y: hidden;
+//   height: 100%;
+// }
+
+scroll-view {
+  height: 100%;
+}
+
+.searchbar {
+  display: flex;
+  align-items: center;
+  width: 750rpx;
+  padding-left: 20rpx;
+  box-sizing: border-box;
+  .cancel {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: #1876ff;
+    text-align: center;
+    width: 120rpx;
+  }
+}
+
+.loading-div {
+  width: 100%;
+
+  .weui-loadmore {
+    margin: 10rpx 0rpx;
+  }
+}
+
+.scoll-view {
+  overflow: scroll;
+  padding: 43rpx 23.5rpx 0 40rpx;
+  height: 178rpx;
+  box-sizing: border-box;
+  display: flex;
+  flex-wrap: wrap;
+  flex-direction: column;
+  align-items: flex-start;
+  margin-bottom: 25rpx;
+}
+
+.scoll-view-unselect {
+  background: rgba(24, 118, 255, 0.06);
+  border-radius: 12rpx;
+  display: inline-block;
+  justify-content: center;
+  align-items: center;
+  font-family: PingFangSC-Regular;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 16rpx;
+  margin-right: 15.5rpx;
+  font-size: 24rpx;
+  padding: 9rpx 30rpx;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.call-select {
+  background: rgba(24, 118, 255, 0.12);
+  border: 1rpx solid #1876ff;
+  border-radius: 12rpx;
+  color: #1876ff;
+}
+</style>
+
+<template>
+  <scroll-view scroll-y="{{isScroll}}">
+    <mp-navigation-bar color="rgb(0, 0, 0)" background="white" title="任务详情"></mp-navigation-bar>
+    <div class="template-infoWrap">
+      <div class="top">
+        <div v-if="showSearchBar" class="searchbar">
+          <taskSearch
+            @onSearch="onSearch"
+            placeholder="请输入客户号码"
+            width="610rpx"
+          ></taskSearch>
+          <div class="cancel" @tap="showBar">取消</div>
+        </div>
+        <div v-show="!showSearchBar" class="search search-on">
+          <div
+            @tap="clickSearch(1)"
+            class="search-button {{ clickResult == 1?'button-on':''}}"
+          >
+            拨打结果 <image class="drop" src="../../asset/task/drop.png" />
+          </div>
+          <div
+            @tap="clickSearch(2)"
+            class="search-button {{ clickResult == 2?'button-on':''}}"
+          >
+            意向结果 <image class="drop" src="../../asset/task/drop.png" />
+          </div>
+          <div @tap="showBar" class="search-icon">
+            <image src="../../asset/task/search.png" />
+          </div>
+        </div>
+        <div
+          style=" min-height:{{clickResult != 0?'320rpx':'0rpx'}}"
+          class="call-result"
+        >
+          <div v-show="clickResult == 1">
+            <div class="call-item">
+              <div
+                v-for="(call, idx) in callList"
+                :key="call.value"
+                @tap="chooseCall(idx)"
+                class="call-unselect {{ call.value  ?'call-select' : '' }}"
+              >
+                {{ call.key }}
+              </div>
+            </div>
+            <div class="call-button">
+              <div @tap="resetCallResult" class="button-reset">重置</div>
+              <div @tap="submitCallResult" class="button-query">查询</div>
+            </div>
+          </div>
+          <div v-show="clickResult == 2">
+            <scroll-view
+              catchtouchmove="preventTouchMove"
+              scroll-y
+              class="scoll-view"
+            >
+              <div
+                v-for="(call, idx) in intentions"
+                :key="call.value"
+                @tap="chooseIntention(idx)"
+                class="scoll-view-unselect {{ call.value  ?'call-select' : '' }}"
+              >
+                {{ call.key }}
+              </div>
+            </scroll-view>
+            <div class="call-button">
+              <div @tap="resetCallResult" class="button-reset">重置</div>
+              <div @tap="submitCallResult" class="button-query">查询</div>
+            </div>
+          </div>
+        </div>
+      </div>
+      <div v-show="clickResult != 0" class="wrap" @tap="clickSearch(0)"></div>
+      <div class="under">
+        <div class="card-option" v-for="record in taskInfoList">
+          <div class="card" @tap="onHandleShowRecordDetail(record)">
+            <div class="card-status">
+              <div
+                class="card-point {{record.feedBack == '成功' ||record.feedBack == '成功(转人工)' || record.feedBack == '正在通话' ? 'card-point-success':''}}"
+              ></div>
+              <div class="card-label-father">
+                <div class="card-time">{{ record.callFormatTime }}</div>
+
+                <div
+                  v-if="record.feedBack == '成功'"
+                  class="card-label card-label-success"
+                >
+                  {{ '拨打' + record.feedBack + '-' + record.callDuration + 's' }}
+                </div>
+                <div
+                  v-if="record.feedBack == '正在通话'"
+                  class="card-label card-label-success"
+                >
+                  {{ '正在通话' }}
+                </div>
+                <div
+                  v-if="record.feedBack == '成功(转人工)'"
+                  class="card-label card-label-success"
+                >
+                  {{ '成功(转人工)' }}
+                </div>
+                <div
+                  v-if="record.feedBack !== '成功' && record.feedBack !== '成功(转人工)' && record.feedBack !== '正在通话' "
+                  class="card-label"
+                >
+                  {{ record.feedBack || '拨打失败' }}
+                </div>
+              </div>
+            </div>
+            <div class="card-name">
+              <div>手机号码</div>
+              <isDeansPhone :phone="record.phone" />
+            </div>
+            <div class="card-name">
+              <div>任务名称</div>
+              <div>{{ record.taskName }}</div>
+            </div>
+
+            <div class="card-template">
+              <div>话术模板</div>
+              <div>{{ record.templateName }}</div>
+            </div>
+            <div class="card-info">
+              查看通话记录
+              <image class="img-back" src="../../asset/task/back.png" />
+            </div>
+          </div>
+        </div>
+      </div>
+      <div class="loading-div" v-if="refresh">
+        <mp-loading type="circle"></mp-loading>
+      </div>
+    </div>
+  </scroll-view>
+</template>
+
+<script>
+import wepy from '@wepy/core';
+import wxApi from '@/wxapi/main';
+import * as taskApi from '@/wxapi/taskApi';
+import moment from 'moment';
+import { mapState, mapMutations } from '@wepy/x';
+import store from '../../store';
+
+//  <div v-show="clickResult == 2">
+//       <div class="intention-item">
+//         <div
+//           v-for="(intention, idx) in intentions"
+//           @tap="chooseIntention(idx)"
+//           class="intention-unselect"
+//         >
+//           {{ intention.key }}
+//           <image
+//             v-show="intention.value"
+//             class="intention-select"
+//             src="../../asset/task/selected.png"
+//           />
+//         </div>
+//       </div>
+//        </div>
+
+wepy.page({
+  store,
+  onLoad(option) {
+    const { taskId, templateId } = option;
+    console.log(taskId, templateId);
+    this.queryCondition.taskId = taskId;
+    this.fetchInfoList();
+    this.fetchIntentions(templateId);
+  },
+  config: {},
+
+  hooks: {},
+  data: {
+    queryCondition: {
+      pageSize: 10,
+      pageNum: 1,
+      taskId: '',
+    },
+    refresh: false,
+    taskInfoList: [],
+    lastPage: false, // 是否是最后一页的数据
+    clickResult: 0,
+    callList: [
+      { key: '拨打成功', value: false, submit: '成功' },
+      { key: '语音信箱', value: false, submit: '语音信箱' },
+      { key: '无人接听', value: false, submit: '无人接听' },
+      { key: '拨打失败', value: false, submit: '外呼失败' },
+      {
+        key: '其他',
+        value: false,
+        submit: [
+          '停机',
+          '关机',
+          '不在服务区',
+          '正在通话',
+          '无法判断',
+          '无法接通',
+          '忙音',
+          '空号',
+          '呼叫限制',
+          '暂停服务',
+        ],
+      },
+    ],
+    intentions: [],
+    showSearchBar: false,
+    searchName: '',
+  },
+
+  computed: {
+    isScroll() {
+      return this.clickResult == 0;
+    },
+  },
+
+  created() {},
+  onReachBottom() {
+    console.log('上拉刷新事件触发')
+    if (this.refresh || this.lastPage) {
+      return;
+    }
+    this.queryCondition.pageNum += 1;
+    this.fetchInfoList();
+  },
+  methods: {
+    ...mapMutations({
+      saveCalloutInfo: 'customer/saveCalloutInfo',
+    }),
+    onHandleShowRecordDetail(record) {
+      this.saveCalloutInfo(record);
+      this.$navigate('/pages/customer/customerDetail/calloutDetail', {
+        id: record.id,
+      });
+    },
+    onSearch(value) {
+      this.queryCondition.phone = value;
+      this.queryCondition.pageNum = 1;
+      this.queryCondition.pageSize = 10;
+      this.fetchInfoList('search');
+    },
+    resetCallResult() {
+      if (this.clickResult == 1) {
+        this.callList.forEach((a) => (a.value = false));
+      } else {
+        this.intentions.forEach((a) => (a.value = false));
+      }
+      this.queryCondition.pageNum = 1;
+      this.queryCondition.pageSize = 10;
+      this.fetchInfoList('search');
+      this.clickResult = 0;
+    },
+    submitCallResult() {
+      this.queryCondition.pageNum = 1;
+      this.queryCondition.pageSize = 10;
+      this.fetchInfoList('search');
+      this.clickResult = 0;
+    },
+    chooseCall(idx) {
+      this.callList[idx].value = !this.callList[idx].value;
+    },
+    chooseIntention(idx) {
+      this.intentions[idx].value = !this.intentions[idx].value;
+    },
+    clickSearch(value) {
+      if (this.clickResult != value) {
+        this.clickResult = value;
+      } else {
+        this.clickResult = 0;
+      }
+      if (this.clickResult == 0) {
+      } else {
+      }
+    },
+    showBar() {
+      if (this.showSearchBar) {
+        delete this.queryCondition.phone;
+        this.fetchInfoList('search');
+      }
+      this.clickResult = 0;
+      this.showSearchBar = !this.showSearchBar;
+    },
+    isSuccess(rm) {
+      return rm && rm.code == 0;
+    },
+    async fetchIntentions(templateId) {
+      let res = await wxApi.request(
+        taskApi.intentions,
+        'GET',
+        { templateId },
+        { 'Content-Type': 'application/json' },
+        taskApi.baseUrl
+      );
+      if (this.isSuccess(res)) {
+        this.intentions = res.data.map((a) => ({
+          key: a.intention,
+          value: false,
+        }));
+        this.refresh = false;
+
+        // this.intentions = [
+        //   { intention: 'A[[intent]]', minScore: null, maxScore: null },
+        //   { intention: 'B[[intent]]', minScore: null, maxScore: null },
+        // ].map((a) => ({ key: a.intention, value: false }));
+      }
+    },
+    async fetchInfoList(type) {
+      let otherFeedBack = [];
+      let feedBack = [];
+      this.callList
+        .filter((a) => a.value)
+        .forEach((a) => {
+          if (typeof a.submit == 'object') {
+            otherFeedBack = a.submit;
+          } else {
+            feedBack.push(a.submit);
+          }
+        });
+      feedBack = [...feedBack, ...otherFeedBack];
+
+      const intention = this.intentions
+        .filter((a) => a.value)
+        .map((a) => a.key);
+      const payload = {
+        ...this.queryCondition,
+        feedBack,
+        intention,
+        enterType: 'task',
+      };
+      this.refresh = true;
+       if (type === 'search') {
+        this.taskInfoList = [];
+        this.lastPage = false;
+      }
+      let res = await wxApi.request(
+        taskApi.queryTaskInfo,
+        'POST',
+        payload,
+        { 'Content-Type': 'application/json' },
+        taskApi.baseUrl
+      );
+      if (this.isSuccess(res)) {
+        let { list = [], lastPage } = res.data;
+        list.forEach((a) => {
+          a.callFormatTime = moment(a.callTime).format('YYYY-MM-DD HH:mm');
+        });
+        this.taskInfoList = [...this.taskInfoList, ...list];
+        this.lastPage = lastPage;
+        this.refresh = false;
+      }
+    },
+  },
+});
+</script>
+<config>
+{
+    navigationBarTitleText: '任务详情',
+    navigationStyle: 'custom',
+    usingComponents: {
+      taskSearch: '~Components/taskSearch',
+      isDeansPhone: './isDeansPhone',
+      "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+    }
+}
+</config>

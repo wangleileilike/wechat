@@ -1,0 +1,273 @@
+<template>
+<view class="wrap">
+  <view class="callbox-list">
+    <view class="title">
+      {{openingRemarks.title}}
+    </view>
+    <view class="content-text">
+      {{openingRemarks.voiceText}}
+    </view>
+
+    <view class="header bottom-btn">
+    <div
+      class="audition-button"
+    >
+      <callbox-audio :audioId="-1" class="callbox-audio" width="40rpx" height="40rpx" :src="openingRemarks.voiceUrl"><text class="btn-name">试听</text></callbox-audio>
+    </div>
+      <view type="primary" class="editor-button" @tap="gotoEditPrologue">
+        <img class="edit-img" src="/static/images/callbox/edit.png" />
+      </view>
+    </view>
+  </view>
+  <view class="callbox-list" v-if="hasGetPhoneAuth">
+    <view class="header" bind:tap="gotoKnowledge">
+      <text class="tip-title">客服知识库</text>
+      <img class="detail-btn" src="@/assist/customer/detail.png" />
+    </view>
+    <view class="header" bind:tap="gotoSpeech">
+      <text class="tip-title">兜底话术</text>
+      <img class="detail-btn" src="@/assist/customer/detail.png" />
+    </view>
+  </view>
+  <view class="callbox-list">
+    <view class="header-one" bind:tap="gotoRecord">
+      <text class="tip-title">来电记录</text>
+      <img class="detail-btn" src="@/assist/customer/detail.png" />
+    </view>
+  </view>
+</view>
+</template>
+
+<style lang="less" scoped>
+.wrap{
+  padding: 32rpx;
+}
+.callbox-list {
+  margin-bottom: 32rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+  .detail-btn {
+    width: 24rpx;
+    height: 24rpx;
+    transform: scaleX(-1);
+  }
+  .title {
+    margin-bottom: 24rpx;
+    font-size: 32rpx;
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 600;
+  }
+  .content-text {
+    font-size: 30rpx;
+    color: rgba(0, 0, 0, 0.65);
+    word-break: break-all;
+  }
+  .bottom-btn {
+    margin: 32rpx 0 0 0;
+  }
+  .btn-name {
+    margin-left: 15rpx;
+    font-size: 30rpx;
+    text-align: center;
+    font-family: PingFangSC-Medium;
+  }
+  .audition-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 176rpx;
+    height: 64rpx;
+    // line-height: 64rpx;
+    // margin: 32rpx 0 0 0;
+    border-radius: 36rpx;
+    color: #1876ff;
+    border: 3rpx solid#1876ff;
+    background: #fff;
+    font-size: 28rpx;
+    .callbox-audio{
+      width: 100%;
+      height: 100%;
+    }
+  }
+  .editor-button {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 104rpx;
+    height: 64rpx;
+    // line-height: 64rpx;
+    // margin: 32rpx 0 0 0;
+    border-radius: 36rpx;
+    color: #fff;
+    // border: 1rpx solid#1876ff;
+    background: #1876ff;
+    font-size: 28rpx;
+  }
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    &:first-child {
+      margin-bottom: 67rpx;
+    }
+    .edit-img,
+    .voice-img {
+      width: 40rpx;
+      height: 40rpx;
+    }
+    .voice-img {
+      margin-right: 8rpx;
+    }
+
+    .tip-title {
+      font-size: 32rpx;
+      color: rgba(0, 0, 0, 0.85);
+      font-weight: 400;
+    }
+    .tip-status {
+      font-size: 24rpx;
+      color: #1876ff;
+    }
+  }
+  .header-one {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .edit-img,
+    .voice-img {
+      width: 40rpx;
+      height: 40rpx;
+    }
+    .voice-img {
+      margin-right: 8rpx;
+    }
+
+    .tip-title {
+      font-size: 32rpx;
+      color: rgba(0, 0, 0, 0.85);
+      font-weight: 400;
+    }
+    .tip-status {
+      font-size: 24rpx;
+      color: #1876ff;
+    }
+  }
+  .detail-item {
+    margin-bottom: 24rpx;
+    .detail-item-label {
+      width: 180rpx;
+      display: inline-block;
+      font-size: 28rpx;
+      color: rgba(0, 0, 0, 0.45);
+    }
+    .detail-item-value {
+      font-size: 28rpx;
+      color: rgba(0, 0, 0, 0.65);
+    }
+  }
+  .swiper-container {
+    height: 174rpx;
+
+    .swiper-item {
+      width: 256rpx !important;
+    }
+  }
+  .callbox-empty {
+    height: 172rpx;
+    text-align: center;
+    line-height: 172rpx;
+    font-size: 24rpx;
+    color: rgba(0, 0, 0, 0.45);
+    font-weight: 400;
+  }
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '@/store/index';
+import eventHub from '@/common/eventHub';
+import { hasAuthority } from '../../../utils/utils'
+import { getStorage } from '../../../wxapi/main'
+
+wepy.component({
+  store,
+  data: {
+    refresh: false,
+    openingRemarks:{}
+    // radioChecked: false,
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+    }),
+    hasGetPhoneAuth() {
+      const account = getStorage('account');
+      return hasAuthority('PHONE_repository_view')(account && account.authorities);
+    }
+  },
+
+  created() {
+    this.getOpeningRemarks()
+    eventHub.$on('refreshGetOpeningRemarks', () => {
+      this.getOpeningRemarks();
+    })
+    },
+  methods: {
+    getOpeningRemarks() {
+        this.refresh = true;
+        this.$store.dispatch({
+            type: 'callbox/getOpeningRemarks',
+            payload: {
+              source:this.currentBox.callinConfig.source
+            },
+            cb: (data) => {
+                this.refresh = false;
+                this.openingRemarks = data;
+            },
+        });
+    },
+    gotoSpeech() {
+      wx.navigateTo({
+        url: `/pages/callbox/callinConfig/voiceSpeech`,
+      });
+      eventHub.$emit('stopAudio');
+    },
+    gotoRecord() {
+      wx.navigateTo({
+        url: `/pages/callbox/callinConfig/callRecode`,
+      });
+      eventHub.$emit('stopAudio');
+    },
+    gotoKnowledge() {
+      wx.navigateTo({
+        url: `/pages/callbox/callinConfig/knowledge`,
+      });
+      eventHub.$emit('stopAudio');
+    },
+    gotoEditPrologue() {
+      wx.navigateTo({
+        url: `/pages/callbox/callinConfig/editPrologue?page=openRemark&title=${this.openingRemarks.title}&voiceType=${this.openingRemarks.voiceType}&voiceText=${this.openingRemarks.voiceText}`,
+      });
+      eventHub.$emit('stopAudio');
+    },
+  },
+  onLoad() {
+  },
+  props: {
+  },
+});
+</script>
+<config>
+{
+  // navigationBarTitleText: '智能电话机',
+  // navigationBarBackgroundColor: '#ffffff',
+  // navigationStyle: 'custom',
+  usingComponents: {
+    "callbox-audio": "../audio/index",
+  }
+}
+</config>

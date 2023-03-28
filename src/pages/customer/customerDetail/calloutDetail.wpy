@@ -1,0 +1,195 @@
+<template>
+  <div>
+    <mp-navigation-bar show="{{true}}" color="{{'#000'}}" background="{{'#fff'}}" title="通话详请"  @back="backToBeforePage"></mp-navigation-bar>
+    <div class="card">
+      <div class="userinfo-card">
+        <img class="user-header-img" src="../../../assist/customer/user-header.png"/>
+        <div class="userinfo-div">
+          <div class="phone-info">{{desensPhone}}</div>
+          <div class="field-div">
+            <span class="user-name-field">用户姓名:</span>
+            <span class="user-name-value">{{calloutInfo.dynamicProperties && calloutInfo.dynamicProperties.name || calloutInfo.customerName || '-'}}</span>
+          </div>
+          <div class="field-div">
+            <span class="user-name-field">开始时间:</span>
+            <span class="user-name-value">{{getCallTimeFormat || '-'}}</span>
+          </div>
+        </div>
+        <div class="call-div" @tap="onHandleCall">
+          <img class="call-img" src="../../../assist/customer/call-img.png"/>
+        </div>
+      </div>
+      <div class="tag-box-div">
+        <div class="field-div">
+          <div class="field-name">任务名称:</div><div class="field-value">{{calloutInfo.taskName || '-'}}</div>
+        </div>
+        <div class="field-div">
+          <div class="field-name">客户意向:</div><div class="field-value">{{calloutInfo.intention || '-'}}</div>
+        </div>
+        <div class="field-div">
+          <div class="field-name">客户信息:</div><div class="field-value">{{getUserTags || '-'}}</div>
+        </div>
+        <div class="field-div">
+          <div class="field-name">意向路径:</div><div class="field-value">{{calloutInfo.intentionRoute || '-'}}</div>
+        </div>
+      </div>
+    </div>
+    <div class="detail-card">
+      <div class="callout-title">通话记录</div>
+      <div v-if="audioSrc">
+        <mp-audio :src="audioSrc" :callDuration="calloutInfo.callDuration" :isDelete="calloutInfo.storageStatus === 'delete' || calloutInfo.storageStatus === 'dump'"/>
+      </div>
+      <div class="callout-list-div">
+        <block v-for="(item, index) in (calloutInfo.dialogueList || [])" :key="index">
+          <div v-if="item.user === 'robot'" class="robot-card">
+            <img src="../../../assist/customer/robot-header.png" class="header-img"/>
+            <div class="robot-message-div">
+              <div class="robot-message-name">智能外呼机器人</div>
+              <div class="robot-message-value">{{item.chatText}}</div>
+            </div>
+          </div>
+          <div v-if="item.user === 'customer'"  class="customer-card">
+            <img src="../../../assist/customer/user-header.png" class="header-img"/>
+            <div class="customer-message-div">
+              <div class="customer-message-name">{{calloutInfo.dynamicProperties && calloutInfo.dynamicProperties.name || '-'}}</div>
+              <div class="customer-message-value">{{item.chatText}}</div>
+            </div>
+          </div>
+        </block>
+      </div>
+    </div>
+  </div>
+</template>
+
+<style lang="less" scoped>
+  @import './calloutDetail.less';
+</style>
+
+<script>
+  import wepy from '@wepy/core';
+  import store from '../../../store';
+  import { formatTime } from '../../../utils/format';
+  import { hasAuthority, numberDesensitization } from '../../../utils/utils';
+  import { getStorage } from '../../../wxapi/main';
+  import { mapState, mapMutations } from '@wepy/x';
+  import { fileDownUrl } from '../../../services/api';
+
+  wepy.page({
+    store,
+    data: {
+      calloutInfo: {},
+      audioSrc: '',
+    },
+    computed: {
+      getDynamicPropertiesKeys() {
+        const keys = Object.keys(this.calloutInfo && this.calloutInfo.dynamicProperties || {});
+        return keys;
+      },
+      getUserTags() {
+        let result = '';
+        (Object.keys(this.calloutInfo.dynamicProperties || {}) || []).forEach((key) => {
+          if (this.calloutInfo.dynamicProperties[key]) {
+            result = result + `${key}-${this.calloutInfo.dynamicProperties[key]};`;
+          }
+        })
+        if (result.length > 0) {
+          result = result.substring(0, result.length - 1)
+        }
+
+        return result;
+      },
+      desensPhone() {
+        const account = getStorage('account');
+        const inDesens = !hasAuthority('ROLE_phone_pools:record_not_mask_number')(account && account.authorities)
+        return this.calloutInfo.phone && inDesens ? numberDesensitization(this.calloutInfo.phone) : this.calloutInfo.phone;
+      },
+      getCallTimeFormat() {
+        return formatTime(this.calloutInfo.callTime, 'yyyy-MM-dd hh:mm:ss')
+      },
+    },
+    methods: {
+      onHandleCall() {
+        wx.makePhoneCall({
+          phoneNumber: this.calloutInfo.phone
+        })
+      },
+      queryRecordInfo() {
+        const id = this.$wx.options.id;
+        this.$store.dispatch({
+          type: 'customer/fetchTaskRecordInfo',
+          payload: { id },
+          cb: (data) => {
+            this.calloutInfo = data || {};
+            const voiceUrl = this.calloutInfo.voiceUrl;
+            // this.audioSrc = voiceUrl ? `${fileDownUrl}?url=${voiceUrl}&from=miniapp&time=${new Date().getTime()}` : 'error';
+            // 使用文件下载器下载录音文件到本地
+            const audioSrc = voiceUrl ? `${fileDownUrl}?url=${voiceUrl}&from=miniapp&transformVoice=true&transformVoice=true&time=${new Date().getTime()}` : 'error';
+            const that = this;
+            wx.downloadFile({
+              url: audioSrc,
+              success(res) {
+                console.log('下载录音到本地res--->', res)
+                const { tempFilePath, statusCode } = res;
+                if (statusCode === 200) {
+                  that.audioSrc = tempFilePath;
+                  console.log('this.audioSrc--->', that.audioSrc)
+                } else {
+                  wx.showToast({
+                    title: "录音下载出错！",
+                    icon: "none"
+                  })
+                }
+              }
+            })
+            if(data && (data.storageStatus === 'delete' || data.storageStatus === 'dump')) {
+              wx.showToast({
+                title: "该录音已经被删除",
+                icon: "none"
+              })
+            }
+          }
+        })
+      },
+      backToBeforePage() {
+        const pages = getCurrentPages();
+        const url = "/pages/message";
+        if (pages && pages.length > 1) {
+          wx.navigateBack();
+          // wx.navigateBack()
+          // console.log("返回上一页:", pages[0])
+        } else {
+          wx.switchTab({
+            url: url
+          })
+        }
+        // console.log('unload', pages)
+      }
+    },
+    ready() {
+      this.queryRecordInfo();
+      const id = this.$wx.options.id;
+      const isMakeRead =  this.$wx.options.isMakeRead;
+      const bindInfo = getStorage('bindInfo');
+      const account = getStorage('account');
+      if(isMakeRead){
+        const openId = bindInfo && bindInfo.openId;
+        const companyId= account && account.accountInfo.companyId;
+        this.$store.dispatch({
+          type: 'customer/markRead',
+          payload: { id,openId,companyId  },
+        })
+      }
+    },
+  });
+</script>
+<config>
+{
+  navigationBarTitleText: '通话详请',
+  navigationStyle: 'custom',
+  usingComponents: {
+    "mp-audio": "../../../components/audio/index",
+    "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar"
+  }
+}
+</config>
+

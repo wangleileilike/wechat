@@ -1,0 +1,286 @@
+<style lang="less">
+.card {
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+  width: 686rpx;
+  padding-bottom: 8rpx;
+  margin-top: 32rpx;
+  margin-left: 32rpx;
+}
+
+.under {
+  background: #f7f9f9;
+  justify-content: center;
+  flex-wrap: wrap;
+  box-sizing: border-box;
+  position: absolute;
+  min-height: 100%;
+  width: 100%;
+}
+
+.blue-card {
+  background: rgba(24, 118, 255, 0.04);
+  border-radius: 0 0 16rpx 16rpx;
+  padding: 8rpx 32rpx 24rpx;
+  box-sizing: border-box;
+  width: 670rpx;
+  margin-left: 8rpx;
+}
+
+.desc {
+  box-sizing: border-box;
+  display: flex;
+  justify-content: left;
+  font-family: PingFangSC-Regular;
+  font-size: 24rpx;
+  margin-top: 16rpx;
+  :nth-child(1) {
+    color: rgba(0, 0, 0, 0.45);
+    width: 120rpx;
+  }
+  :nth-child(2) {
+    color: rgba(0, 0, 0, 0.65);
+    width: 510rpx;
+  }
+}
+
+.name-label {
+  height: 125rpx;
+  display: flex;
+  align-items: center;
+}
+
+.name-info {
+  margin-left: 16rpx;
+  width: 271rpx;
+}
+.number {
+  font-family: PingFangSC-Medium;
+  font-size: 32rpx;
+  color: rgba(0, 0, 0, 0.85);
+  line-height: 40rpx;
+}
+.icon1 {
+  width: 68rpx;
+  height: 68rpx;
+  margin-left: 32rpx;
+}
+
+.icon2 {
+  width: 104rpx;
+  height: 56rpx;
+  vertical-align: middle;
+  margin-left: 163rpx;
+}
+
+.time {
+  margin-top: 4rpx;
+  font-family: PingFangSC-Regular;
+  font-size: 20rpx;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.redpoint{
+width: 20rpx;
+height: 20rpx;
+border-radius: 45rpx;
+background: red;
+position: relative;
+left: 332px;
+top: -50rpx;
+
+}
+</style>
+
+<template>
+  <div class="under">
+    <mp-navigation-bar color="{{'rgb(0, 0, 0)'}}" background="white" title="消息" back="{{false}}"></mp-navigation-bar>
+    <div
+      v-for="(message, idx) in messages"
+      class="card"
+      @tap="onHandleShowRecordDetail(message)"
+    >
+      <div class="name-label">
+        <div v-if="message.isRead" ></div>
+        <div v-else="message.isRead" class ="redpoint"></div>
+        <image class="icon1" src="../asset/message/top.png"></image>
+        <div class="name-info">
+          <div class="number">{{ message.phone }}</div>
+          <div class="time">{{ message.showTime }}</div>
+        </div>
+        <image
+          @tap.stop="call(message.phone)"
+          class="icon2"
+          src="../asset/message/call.png"
+        ></image>
+      </div>
+      <div class="blue-card">
+        <div class="desc">
+          <div>任务名称:</div>
+          <div>{{ message.taskName }}</div>
+        </div>
+        <div class="desc">
+          <div>客户意向:</div>
+          <div>{{ message.intent }}</div>
+        </div>
+        <div class="desc">
+          <div>客户信息:</div>
+          <div>{{ message.otherInfo }}</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</template>
+
+<script>
+import wepy from '@wepy/core';
+import wxApi from '@/wxapi/main';
+import * as taskApi from '@/wxapi/taskApi';
+import moment from 'moment';
+import { isSuccess } from '../services/api';
+import { mapState, mapMutations } from '@wepy/x';
+import store from '../store';
+wepy.page({
+  store,
+  config: {
+    navigationBarTitleText: '123',
+  },
+
+  hooks: {},
+  data: {
+    timer:null,
+    queryCondition: {
+      pageNo: 1,
+      pageSize: 10,
+    },
+    messages: [],
+  },
+
+  computed: {},
+
+  created() {
+    // if (this.timer) {
+    //   clearInterval(this.timer);
+    // }
+    // this.timer = setInterval(() => this.query(), 10000);
+    // this.query();
+  },
+  onReachBottom() {
+    this.queryCondition.pageSize += 10;
+    this.query();
+  },
+  onShow(){
+    this.query();
+  },
+  methods: {
+    ...mapMutations({
+      saveCalloutInfo: 'customer/saveCalloutInfo',
+    }),
+    async onHandleShowRecordDetail(record) {
+      const res = await this.queryTaskInfo(record);
+      if (isSuccess(res)) {
+        if (res.data && res.data.list) {
+          this.saveCalloutInfo(res.data.list[0]);
+          this.$navigate('/pages/customer/customerDetail/calloutDetail', {
+            id: record.recordId,
+            isMakeRead:true
+          });
+        }
+      }
+    },
+    call(phoneNumber) {
+      wx.makePhoneCall({
+        phoneNumber: phoneNumber + '',
+        success(res) {
+          console.log(res);
+        },
+        fail(res) {
+          console.log(res);
+        },
+      });
+    },
+    async queryTaskInfo(record) {
+      const payload = {
+        recordId: record.recordId,
+        pageSize: 10,
+        pageNum: 1,
+        taskId: record.taskId,
+        feedBack: [],
+        intention: [],
+        enterType: 'task',
+
+        // taskId: "5ffe59ffc1a0360046e2adcc",
+        // id: "5ffe9820f9c6a900465ab3d5"
+      };
+      return await wxApi.request(
+        taskApi.queryTaskInfo,
+        'POST',
+        payload,
+        { 'Content-Type': 'application/json' },
+        taskApi.baseUrl
+      );
+    },
+    async query() {
+      let res = await wxApi.request(
+        taskApi.message,
+        'GET',
+        this.queryCondition,
+        {},
+        taskApi.baseUrl
+      );
+      if (isSuccess(res)) {
+        // const list = [
+        //   { 
+        //     id:12323,
+        //     phone: 13777807144,
+        //     pushTime: 1598874614879,
+        //     taskName: '智能呼叫转移',
+        //     intent: '高意向',
+        //     dynamicProperties: { name: '21', money: '12' },
+        //   },
+        //        {
+        //     id:13332323,
+
+        //     phone: 13777807144,
+        //     pushTime: 1598874614879,
+        //     taskName: '智能呼叫转移',
+        //     intent: '高意向',
+        //     isRead:true,
+        //     dynamicProperties: { name: '21', money: '12' },
+        //   },
+        //      {
+        //     id:199923,
+        //     phone: 13777807144,
+        //     pushTime: 1598874614879,
+        //     taskName: '智能呼叫转移',
+        //     intent: '高意向',
+        //     isRead:true,
+        //     dynamicProperties: { name: '21', money: '12' },
+        //   },
+        // ];
+        const list = (res.data && res.data.list) || [];
+        list.forEach((a) => {
+          a.showTime = moment(a.pushTime).format('YYYY-MM-DD HH:mm');
+          a.otherInfo = '';
+          const keys = Object.keys(a.dynamicProperties || {});
+          keys.forEach((key) => {
+            a.otherInfo += `${key}-${a.dynamicProperties[key]};`;
+          });
+        });
+        this.messages = list;
+      }
+    },
+  },
+});
+</script>
+<config>
+{
+    navigationBarTitleText: '消息',
+    navigationStyle: 'custom',
+    usingComponents: {
+      taskSearch: '~Components/taskSearch',
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar"
+    },
+}
+</config>

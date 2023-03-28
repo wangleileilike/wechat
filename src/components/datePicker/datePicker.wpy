@@ -1,0 +1,197 @@
+<template>
+
+  <view class="group">
+    <view class="box_15">
+      <view class="section_3">
+        <view class="image-text_3">
+          <view class="text-group_1">
+            <picker mode="date" value="{{date[0]}}" start="{{vailStartDate[0]}}" end="{{showDateEnd}}" bindchange="bindDateChangeStart">
+              <view class="picker">
+                {{showDateStart}}
+              </view>
+            </picker>
+            <view class="thumbnail"></view><view class="margin6">~</view>
+            <picker mode="date" value="{{date[1]}}" start="{{showDateStart}}" end="{{vailEndDate[1]}}" bindchange="bindDateChangeEnd">
+              <view class="picker">
+                {{showDateEnd}}
+              </view>
+            </picker>
+            <view class="thumbnail"></view>
+          </view>
+        </view>
+      </view>
+      <view class="section_8">
+        <view class="text-wrapper" :style="{'background-color': selectIndex === 1 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}" @tap="quickSelectTime(1)">
+          <text class="text" :style="{color: selectIndex === 1 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" >今天</text>
+        </view>
+        <view class="text-wrapper" :style="{'background-color': selectIndex === 7 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}" @tap="quickSelectTime(7)">
+          <text class="text" :style="{color: selectIndex === 7 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" >近七天</text>
+        </view>
+        <view class="text-wrapper" :style="{'background-color': selectIndex === 30 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}" @tap="quickSelectTime(30)">
+          <text class="text" :style="{color: selectIndex === 30 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" >近30天</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+  import wepy from '@wepy/core';
+  import { formatTime } from '../../utils/format'
+
+  wepy.component({
+    props: {
+      date: {type: Array, default: ''},
+      maxRange: {type: Number, default: ''},
+    },
+    data: {
+      showDateStart: '',
+      showDateEnd: '',
+      selectIndex: 7,
+      vailStartDate: ['2010-09-01', '2070-09-01'],
+      vailEndDate: ['2010-09-01', '2070-09-01'],
+    },
+    watch: {
+      date(val) {
+        if (val) {
+          this.showDateStart = val[0];
+          this.showDateEnd = val[1];
+        }
+      }
+    },
+    methods: {
+      bindDateChangeStart(e) {
+        const value = e.$wx.detail.value;
+        this.$emit('changeTime', {type: 'start', value});
+        this.showDateStart = value;
+      },
+      bindDateChangeEnd(e) {
+        const value = e.$wx.detail.value;
+        this.$emit('changeTime', {type: 'end', value});
+        this.showDateEnd = value;
+      },
+      quickSelectTime(type) {
+        this.selectIndex = type;
+        if (type ===  1) {
+          const time = formatTime(new Date(), 'yyyy-MM-dd');
+          this.showDateStart = time;
+          this.showDateEnd = time;
+          this.$emit('changeTime', {type: 'select', value: [time, time]});
+        } else if (type === 7) {
+          const time1 = formatTime(new Date() - 6 * 24 * 3600 * 1000, 'yyyy-MM-dd');
+          const time2 = formatTime(new Date(), 'yyyy-MM-dd');
+          this.showDateStart = time1;
+          this.showDateEnd = time2;
+          this.$emit('changeTime', {type: 'select', value: [time1, time2]});
+        } else if (type === 30) {
+          const time1 = formatTime(new Date() - 29 * 24 * 3600 * 1000, 'yyyy-MM-dd');
+          const time2 = formatTime(new Date(), 'yyyy-MM-dd');
+          this.showDateStart = time1;
+          this.showDateEnd = time2;
+          this.$emit('changeTime', {type: 'select', value: [time1, time2]});
+        }
+      },
+      checkDateRang(date1, date2) {
+        const time1 = new Date(date1);
+        const time2 = new Date(date2);
+        if (time2 - time1 > this.maxRange * 24 * 3600 * 1000) {
+          wx.showToast({title: `选择时间范围不能大于${this.maxRange}天，请重新选择`, icon: 'none', duration: 2000});
+          return false;
+        } else {
+          return true;
+        }
+      }
+    }
+  });
+</script>
+<style lang="less">
+.time-box {
+  display: flex;
+  padding: 10rpx;
+  border-radius: 8rpx;
+  font-size: 24rpx;
+}
+.button-small {
+  width: 96rpx;
+  height: 48rpx;
+  background-color: #1B7CFC;
+  color: #fff;
+  padding: 0rpx;
+  font-size: 24rpx;
+  margin-left: 7rpx;
+}
+.button-box {
+  display: flex;
+}
+.box_15 {
+  width: 668rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  margin: 10rpx 25rpx 0 25rpx;
+}
+.section_3 {
+  background-color: rgba(24,118,255,0.100000);
+  border-radius: 8rpx;
+  display: flex;
+  flex-direction: row;
+  padding: 10rpx 36rpx 10rpx 16rpx;
+}
+.image-text_3 {
+  width: 299rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+}
+.text-group_1 {
+  overflow-wrap: break-word;
+  color: rgba(24,118,255,1);
+  font-size: 24rpx;
+  font-family: PingFangSC-Medium;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 32rpx;
+  display: flex;
+}
+.thumbnail {
+  width: 0;
+  height: 0;
+  border-top: 8rpx solid #1876FF;
+  border-right: 8rpx solid transparent;
+  border-left: 8rpx solid transparent;
+  margin: 15rpx 6rpx;
+}
+.margin6 {
+  margin-right: 6rpx;
+}
+.section_8 {
+  width: 270rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+}
+.text-wrapper {
+  background-color: rgba(246,248,249,1.000000);
+  border-radius: NaNrpx;
+  display: flex;
+  flex-direction: column;
+  padding: 10rpx 20rpx 10rpx 20rpx;
+  border-radius: 4rpx;
+}
+.text {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 24rpx;
+  font-family: PingFangSC-Regular;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 32rpx;
+}
+
+.group {
+  box-shadow: 0px 2px 64px 0px rgba(0,19,48,0.100000);
+  background-color: rgba(255,255,255,1.000000);
+  padding-bottom: 10rpx;
+  display: flex;
+  flex-direction: column;
+}
+</style>

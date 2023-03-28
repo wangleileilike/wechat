@@ -1,0 +1,123 @@
+<template>
+  <div class="weui-tabs">
+    <div class="weui-tabs-bar__wrp">
+      <scroll-view scroll-x>
+        <div class="weui-tabs-bar__content">
+          <block wx:for="{{tabs}}" wx:key="title">
+            <div id="item_{{index}}" class="weui-tabs-bar__item" @tap="handleTabClick" data-index="{{index}}">
+              <div class="weui-tabs-bar__title {{tabClass}} {{activeTab === index ? activeClass : ''}}" style="border-bottom-color: transparent">
+                <text class="">{{item.title}}</text>
+              </div>
+              <div class="tabs-bar-select-border" v-if="activeTab === index"></div>
+            </div>
+          </block>
+        </div>
+      </scroll-view>
+    </div>
+    <div class="tab-content">
+      <block wx:for="{{tabs}}" wx:key="title">
+        <slot name="tab-content-{{index}}" v-if="activeTab === index"></slot>
+      </block>
+    </div>
+  </div>
+</template>
+
+<style lang="less" scoped>
+    .weui-tabs{
+      width:100%
+    }
+
+    .weui-tabs-bar__wrp{
+      width:100%;background:#fff;
+    }
+    
+    .weui-tabs-bar__content{
+      display: flex;
+      width: 100%;
+      white-space: nowrap;
+    }
+    
+    .weui-tabs-bar__item{
+      flex: 1;
+      text-align: center;
+      font-family: PingFangSC-Medium;
+      font-size: 32rpx;
+      text-align: center;
+    }
+    
+    .weui-tabs-bar__title{
+      display:inline-block;
+      margin: 26rpx 10rpx;
+      border-bottom-width:2px;
+      border-bottom-style:solid;
+      border-bottom-color:transparent
+    }
+
+    .weui-tabs-bar__wrp {
+        border-bottom: 1px solid #eee;
+    }
+
+    .tab-bar-title__selected {
+      color: #1876FF;
+      // border-bottom-width: 4rpx !important;
+      // border-bottom-color: #1876FF !important;
+    }
+
+    .tabs-bar-select-border {
+      width: 21rpx;
+      height: 6rpx;
+      background: #1876FF;
+      margin: auto;
+      border-radius: 4rpx 4rpx 0 0;
+    }
+
+    .tab-content {
+      
+    }
+</style>
+
+<script>
+  import wepy from '@wepy/core'
+
+  wepy.component({
+    options: {
+      multipleSlots: true // 在组件定义时的选项中启用多slot支持
+    },
+    data: {
+      userInfo: {
+        tag: ['测试','测试df','测试er' ,'测试123', '测试231', '测试234']
+      }
+      // radioChecked: false,
+    },
+    // computed: {
+    //   getChecked() {
+    //     return this.allSelected[this.data.id] || false;
+    //   }
+    // },
+    methods: {
+      handleTabClick(e) {
+        console.log(e)
+        var index = e.currentTarget.dataset.index;
+        this.$emit('change', {index: index})
+      }
+    },
+    props: {
+      tabs: {
+        type: Array,
+        default: []
+      },
+      activeTab: {
+        type: Number,
+        default: 0      
+      },
+      activeClass: {
+        type: String,
+        default: ''
+      },
+      tabClass: {
+        type: String,
+        default: ''
+      },
+    }
+  });
+</script>

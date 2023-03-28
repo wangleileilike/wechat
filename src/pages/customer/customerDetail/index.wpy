@@ -1,0 +1,216 @@
+<template>
+  <div>
+    <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="客户详请"></mp-navigation-bar>
+    <div class="card">
+      <div class="userinfo-card">
+        <img class="user-header-img" src="../../../assist/customer/user-header.png"/>
+        <div class="userinfo-div">
+          <div class="phone-info">{{desensPhone}}</div>
+          <div>
+            <span class="user-name-field">用户姓名:</span>
+            <span class="user-name-value">{{customerInfo.dynamicProperties && customerInfo.dynamicProperties.name || customerInfo.customerName || '-'}}</span>
+          </div>
+        </div>
+        <div class="call-div" @tap="onClickCall">
+          <img class="call-img" src="../../../assist/customer/call-img.png"/>
+        </div>
+      </div>
+      <div class="line-div"></div>
+      <div class="tag-box-div">
+        <div class="tag-div" v-for="(tag, index) in (customerInfo.tag || [])" :key="tag-index">{{tag}}</div>
+        <div class="tag-div" v-for="(tag, index) in getSystemTag" :key="tag-index" v-if="tag.checked">
+          {{tag.key}}
+        </div>
+      </div>
+    </div>
+    <div class="detail-card">
+      <mp-tabs 
+        :tabs="hasAuthorityTabs" 
+        :activeTab="activeTab" 
+        @change="onChangeTab"
+        swiperClass="weui-tabs-swiper"
+        activeClass="tab-bar-title__selected"
+      >
+        <block v-for="(item, index) in hasAuthorityTabs" :key="index">
+          <view class="tab-content" slot="tab-content-{{index}}" >
+            <div v-if="item.key == 'customerInfo'" style="width: 100%">
+              <div class="customer-dynamic-list">
+                <div v-for="item in getDynamicPropertiesKeys" :key="item" class="item-div">
+                  <div class="dynamic-name">{{item}}</div>
+                  <div class="dynamic-value">{{customerInfo.dynamicProperties[item]}}</div>
+                </div>
+              </div>
+            </div>
+            <div v-if="item.key == 'calloutList'" style="width: 100%">
+              <div class="customer-dynamic-list">
+                <block v-for="item in (recordData.list || [])" :key="item.id">
+                  <callDetailCard :record="item" @showDetail="onHandleShowRecordDetail"/>
+                  <div class="line-div"></div>
+                </block>
+                <div v-if="refreshRecordList" class="call-detail-loading-div">
+                  <mp-loading type="circle"></mp-loading>
+                </div>
+              </div>
+            </div> 
+          </view>
+          <view class="tab-content" data-set="{{item}}" slot="tab-content-title{{index}}">
+            <div>{{item.index}}</div>
+          </view>
+        </block>
+      </mp-tabs>
+    </div>
+    <div class="edit-btn-div" v-if="activeTab === 0 && hasCustomerEditAuth">
+      <button class="edit-btn" type="default" @tap="onClickEditInfo">编辑</button>
+    </div>
+  </div>
+</template>
+
+<style lang="less" scoped>
+  @import './index.less';
+</style>
+
+<script>
+  import wepy from '@wepy/core';
+  import store from '../../../store';
+  import { hasAuthority, numberDesensitization } from '../../../utils/utils';
+  import { getStorage } from '../../../wxapi/main';
+  import { mapState, mapMutations } from '@wepy/x';
+
+  wepy.page({
+    store,
+    data: {
+      refreshRecordList: false,
+      pageInfo: {
+        pageNum: 1,
+        pageSize: 10,
+      },
+      activeTab: 0,
+      tabs: [
+        { key: 'customerInfo', auth: '', title: '客户信息' },
+        { key: 'calloutList', auth: 'ROLE_customer_details:record_list', title: '通话记录' },
+      ],
+      recordData: {},
+      // radioChecked: false,
+      systemTagSelect: [
+        {key: '秒挂', value: 'hangUpInstantly'},
+        {key: '投诉', value: 'complaint'},
+        {key: '静默', value: 'silent'},
+        // {key: '空号', value: 'phoneEmpty', extra: '根据同花顺数据最后一次外呼为空号'},
+        // {key: '行业无意向', value: 'noIntention', extra: '根据同花顺数据判断对模板行业无意向'},
+      ]
+    },
+    computed: {
+      ...mapState({
+        customerInfo: state => state.customer.customerInfo
+      }),
+      getDynamicPropertiesKeys() {
+        const keys = Object.keys(this.customerInfo && this.customerInfo.dynamicProperties || {});
+        return keys;
+      },
+      desensPhone() {
+        const account = getStorage('account');
+        const inDesens = !hasAuthority('ROLE_phone_pools:not_view_number')(account && account.authorities)
+        return this.customerInfo.phone && inDesens ? numberDesensitization(this.customerInfo.phone) : this.customerInfo.phone;
+      },
+      hasRecordListAuth() {
+        const account = getStorage('account');
+        return hasAuthority('ROLE_customer_details:record_list')(account && account.authorities)
+      },
+      hasCustomerEditAuth() {
+        const account = getStorage('account');
+        return hasAuthority('ROLE_customer_details:update')(account && account.authorities)
+      },
+      hasAuthorityTabs() {
+         const account = getStorage('account');
+        return this.tabs.filter(item => {
+          return item.auth ? hasAuthority(item.auth)(account && account.authorities) : true;
+        });
+      },
+      getSystemTag() {
+        return this.systemTagSelect.map(item => {
+          let flag = false;
+          if ((this.customerInfo.systemTag || []).indexOf(item.value) >= 0) {
+            flag = true;
+          }
+          return {...item, checked: flag};
+        })
+      }
+    },
+    methods: {
+      ...mapMutations({
+        saveCalloutInfo: 'customer/saveCalloutInfo'
+      }),
+      fetchRecordList(params, type='concat') {
+        this.refreshRecordList = true;
+        this.$store.dispatch({
+          type: 'customer/fetchTaskRecordList',
+          payload: {
+            enterType: "dialog",
+            phone: this.customerInfo.phone,
+            ...this.pageInfo,
+            ...params
+          },
+          cb: (data) => {
+            if (data) {
+              if (type === 'concat') {
+                const newList = (this.recordData.list || []).concat(data.list);
+                this.recordData = {...data, list: newList};
+              }
+              this.tabs[1].title = `通话记录(${data.totalCount || 0})`;
+            }
+            this.refreshRecordList = false;
+          }
+        })
+      },
+      onClick(e, checked) {
+        this.value = !this.value;
+        this.$emit('change', {id: this.data.id, value: this.value})
+      },
+      onChangeTab(e) {
+        this.activeTab = e.index;
+        if (e.index === 1) {
+          this.fetchRecordList();
+        }
+      },
+      onClickEditInfo() {
+        this.$navigate('/pages/customer/customerDetail/customerEdit', {id: this.customerInfo.id, type: 'edit'})
+      },
+      onHandleShowRecordDetail(record) {
+        this.saveCalloutInfo(record);
+        this.$navigate('/pages/customer/customerDetail/calloutDetail', {id: record.id})
+      },
+      onClickCall() {
+        wx.makePhoneCall({
+          phoneNumber: this.customerInfo.phone
+        })
+      }
+    },
+    // 上拉刷新事件
+    onReachBottom() {
+      if (this.refreshRecordList || this.recordData.lastPage && this.activeTab === 0) {
+          return;
+      }
+      this.pageInfo = {...this.pageInfo, pageNum: this.pageInfo.pageNum + 1};
+      this.fetchRecordList();
+    },
+    onLoad() {
+      // 有通话详请属性时查询通话列表长度
+      if (this.hasRecordListAuth) {
+        this.fetchRecordList({pageNum: 1, pageSize: 1}, 'clear');
+      }
+    }
+  });
+</script>
+<config>
+{
+  navigationBarTitleText: '客户详请',
+  navigationStyle: 'custom',
+  usingComponents: {
+    "mp-tabs": "./tabs",
+    callDetailCard: "./callDetailCard",
+    "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+    "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+  }
+}
+</config>
+

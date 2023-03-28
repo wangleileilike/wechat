@@ -1,0 +1,111 @@
+<style lang="less">
+  .timer {
+    width: 108rpx;
+    height: 49rpx;
+    background: rgba(24, 118, 255, 0.06);
+    border-radius: 12rpx;
+    font-size: 24rpx;
+    font-family: PingFangSC-Medium, PingFang SC;
+    font-weight: 500;
+    color: #1B7CFC;
+    line-height: 49rpx;
+    text-align: center;
+  }
+  .timerWrap {
+      display: flex;
+      justify-content: center;
+      align-items: center;
+  }
+
+</style>
+
+<template>
+    <view class="timerWrap">
+        <view class="{{className}}">
+            {{ showTime }}
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from '@wepy/core';
+    import eventHub from '../../common/eventHub';
+
+    wepy.component({
+        data: {
+           showTime: '00 : 00',
+           second: 0,
+           minute: 0,
+           timeoutId: null,
+           isCounting: false
+        },
+        props: {
+            className: {
+                type: String,
+                default: 'timer'
+            },
+            maxTime: {
+                type: Number,
+                default: 10
+            }
+        },
+        methods: {
+            // 开始计时
+            onStart() {
+                this.resetTimer();
+                if (this.timeoutId) {
+                    clearInterval(this.timeoutId); // 清除计时器
+                }
+                if(!this.isCounting) {
+                    this.isCounting = true;
+                    const _this = this;
+                    this.timeoutId = setInterval(() => {
+                        _this.countTime(_this)
+                    }, 1000);
+                }
+            },
+            // 停止计时
+            stopTime() {
+                if(this.isCounting) {
+                    this.isCounting = false;
+                    clearInterval(this.timeoutId); // 清除计时器
+                }
+            },
+            countTime(that) {
+                that.second = that.second + 1;
+                if(that.second >= 60) {
+                    that.minute += 1;
+                    that.second = 0;
+                }
+
+                if(that.minute > that.maxTime) {
+                    wx.showToast({
+                        title: `录音时长不能超过${that.maxTime}分钟!`,
+                        icon: 'none'
+                    });
+                    that.stopTime();
+                }
+                const showSec = that.checkTime(that.second);
+                const showMin = that.checkTime(that.minute);
+
+                that.showTime = `${showMin} : ${showSec}`;
+            },
+            checkTime(time) {
+                if(time < 10) {
+                    time = `0${time}`;
+                }
+                return time;
+            },
+            resetTimer() {
+                this.minute = 0;
+                this.second = 0;
+                this.showTime = '00 : 00';
+            }
+        },
+        detached() {
+            this.stopTime();
+            this.resetTimer();
+        }
+  });
+
+</script>

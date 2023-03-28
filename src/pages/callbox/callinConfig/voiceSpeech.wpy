@@ -1,0 +1,231 @@
+<template>
+  <scroll-view class="">
+    <mp-navigation-bar
+      color="{{'rgb(0, 0, 0)'}}"
+      background="white"
+      title="兜底话术配置"
+      back="{{true}}"
+    ></mp-navigation-bar>
+    <view class="list-items" v-for="(item, idx) in voiceSpeechList" :key="item.voiceType">
+      <text class="text-title">{{titleDict[item.voiceType]}}</text>
+      <view class="box" v-for="child in item.preVoiceTextList" :key="child.index">
+        <view class="image-text" @tap="changSelectText(item.voiceType, child.voiceText, child.index, item.selectedIndex, idx)">
+          <img v-if="child.index === item.selectedIndex" class="icon" src="../../../assist/calloutentry/selected.png" />
+          <img v-else class="icon" src="../../../assist/calloutentry/noselect.png" />
+          <text class="text-group">{{child.voiceText}}</text>
+        </view>
+        <img class="icon" src="../../../assist/calloutentry/edit-1.png" @tap="gotoEditPrologue(titleDict[item.voiceType], item.voiceType, child.voiceText, child.index)" />
+      </view>
+    </view>
+  </scroll-view>
+</template>
+
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '@/store/index';
+import eventHub from '@/common/eventHub';
+
+wepy.page({
+
+  store,
+  data: {
+    content: '你好，我是人工智能客服，有什么可以帮助您，请讲。',
+    // radioChecked: false,
+    titleDict: {
+      1: '“用户持续不说话”时回复：',
+      2: '“转人工过程中”提示：',
+      5: '“用户不说话”时回复：',
+      6: '“机器人未识别出客户提问”时回复：',
+      7: '“机器人故障时”时回复：',
+      8: '“机器人回答问题后”立刻回复：',
+      9: '“机器人语句识别失败”时回复：',
+      10: '“客户需要转人工”时挽留回复：',
+      12: '“非工作时间，客户转人工失败”时回复：',
+    },
+    timer: null,
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+      voiceSpeechList: (state) => state.callbox.voiceSpeechList,
+    }),
+  },
+  onLoad() {
+    this.getVoiceSpeechList({source:this.currentBox.callinConfig.source});
+    eventHub.$on('refreshGetVoiceSpeechList', () => {
+      this.getVoiceSpeechList({source:this.currentBox.callinConfig.source});
+    })
+  },
+  methods: {
+    ...mapActions({
+      taskSubmit:'callbox/taskSubmit',
+      taskResult:'callbox/taskResult',
+      getVoiceSpeechList:'callbox/getVoiceSpeechList'
+    }),
+    gotoEditPrologue(title, voiceType, voiceText, index) {
+      wx.navigateTo({
+        url: `/pages/callbox/callinConfig/editPrologue?page=voiceSpeech&title=${title}&voiceType=${voiceType}&voiceText=${voiceText}&index=${index}`,
+      });
+      eventHub.$emit('stopAudio');
+    },
+    changSelectText(voiceType, text, selectedIndex, item, index) {
+      if (selectedIndex === item.selectedIndex) return;
+      const params={
+        source:this.currentBox.callinConfig.source,
+        type:14,
+        params:{
+          voiceType,
+          text,
+          selectedIndex
+        }
+      }
+      this.taskSubmit(params).then(res=>{
+        this.voiceSpeechList[index].selectedIndex = selectedIndex;
+      })
+    },
+  },
+  props: {
+  },
+});
+</script>
+<style lang="less" scoped>
+.callbox-container {
+  min-height: 100vh;
+  background: #edf0f4;
+}
+.callbox-list {
+  margin: 32rpx 32rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+  .title {
+    margin-bottom: 24rpx;
+    font-size: 32rpx;
+    color: rgba(0, 0, 0, 0.85);
+    font-weight: 500;
+  }
+  .detail-btn {
+    width: 24rpx;
+    height: 24rpx;
+    transform: scaleX(-1);
+  }
+  .time,
+  .content {
+    font-size: 24rpx;
+    color: rgba(0, 0, 0, 0.45);
+    overflow: hidden;
+    white-space: nowrap;
+    text-overflow: ellipsis;
+  }
+  .divider {
+    border-left: 3rpx solid #ebebeb;
+    height: 32rpx;
+    margin: 0 16rpx;
+  }
+  .audition-button {
+    display: flex;
+    align-items: center;
+    // justify-content: center;
+    width: 176rpx;
+    height: 64rpx;
+    // line-height: 64rpx;
+    margin: 32rpx 0 0 0;
+    border-radius: 36rpx;
+    color: #1876ff;
+    // border: 1rpx solid#1876ff;
+    background: #fff;
+    font-size: 28rpx;
+  }
+  .editor-number {
+    margin: 32rpx 0 0 0;
+    color: #999;
+    font-size: 28rpx;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    .voice-img {
+      width: 32rpx;
+      height: 32rpx;
+    }
+    .voice-img {
+      margin-left: 8rpx;
+    }
+  }
+}
+.save-btn {
+  margin: 72rpx 32rpx 32rpx;
+  background: linear-gradient(135deg, #6ba7ff 0%, #1876ff 100%);
+  border-radius: 48rpx;
+}
+.list-items {
+  box-shadow: 0px 1px 32px 0px rgba(0,19,48,0.1);
+  background-color: rgba(255,255,255,1.000000);
+  border-radius: 16rpx;
+  width: 686rpx;
+  height: auto;
+  margin: 32rpx;
+  display: flex;
+  flex-direction: column;
+  justify-content: flex-center;
+  padding-bottom: 10px;
+}
+.text-title {
+  width: 622rpx;
+  height: 44rpx;
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 32rpx;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 44rpx;
+  margin: 32rpx 0 32rpx 32rpx;
+  font-weight: 600;
+}
+.box {
+  width: 626rpx;
+  height: auto;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  margin: 23rpx 0 24rpx 28rpx;
+}
+.image-text {
+  width: 566rpx;
+  height: auto;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+}
+.icon {
+  width: 40rpx;
+  height: 40rpx;
+  background-size: 100% 100%;
+  margin-top: 2rpx;
+}
+.text-group {
+  width: 506rpx;
+  height: auto;
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 28rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  line-height: 44rpx;
+}
+</style>
+<config>
+{
+    navigationBarTitleText: '兜底话术配置',
+    navigationBarBackgroundColor: '#ffffff',
+    navigationStyle: 'custom',
+    usingComponents: {
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+      "callbox-audio": "../audio/index.wpy",
+    }
+}
+</config>

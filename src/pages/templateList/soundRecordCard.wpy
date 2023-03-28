@@ -1,0 +1,78 @@
+<style lang="less">
+    .recordCard {
+        height: 498rpx;
+        background: rgba(24, 118, 255, 0.08);
+        border-radius: 20rpx;
+        border: 1rpx solid #1876FF;
+        margin: 114rpx 48rpx 0 48rpx;
+        box-sizing: border-box;
+        padding: 0 56rpx;
+    }
+    .title-card {
+        height: 114rpx;
+        line-height: 114rpx;
+        font-size: 32rpx;
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: rgba(0, 0, 0, 0.85);
+        border-bottom:  1rpx solid rgba(24, 118, 255, 0.08);
+        display: flex;
+        justify-content: space-between;
+    }
+    .text-card {
+        font-size: 44rpx;
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: #202020;
+        line-height: 75rpx;
+        box-sizing: border-box;
+        padding-top: 26rpx;
+        height: 300rpx;
+        overflow-y: auto;
+    }
+    .indexNumber {
+        font-size: 26rpx;
+        font-family: PingFangSC-Semibold, PingFang SC;
+        font-weight: 600;
+        color: #1876FF;
+    }
+    .voiceName {
+        overflow: hidden;
+        text-overflow: ellipsis;
+        white-space: nowrap;
+    }
+</style>
+
+<template>
+    <view class="recordCard">
+        <div class="title-card">
+            <babel class="voiceName">{{voiceDetail.name}}</babel>
+            <babel class="indexNumber">{{voiceDetail.indexNumber}}</babel>
+        </div>
+        <div class="text-card">
+            {{voiceDetail.txt}}
+        </div>
+    </view>
+</template>
+
+<script>
+    import wepy from '@wepy/core'
+    import eventHub from '../../common/eventHub';
+    import { mapState } from '@wepy/x';
+    import store from '../../store';
+    import WXAPI, { getStorage } from '../../wxapi/main';
+
+    wepy.component({
+        store,
+        data: {
+            pageInfo: { pageSize: 10, pageNum: 1 },
+        },
+        props: {
+            voiceDetail: {
+                type: Object,
+                default: {},
+            },
+        },
+  });
+
+</script>

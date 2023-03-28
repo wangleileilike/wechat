@@ -1,0 +1,40 @@
+<template>
+  <div class="phone">{{isDesensPhone}}</div>
+</template>
+<style>
+  .phone {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.65);
+    text-align: right;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 465rpx;
+  }
+</style>
+<script>
+  import wepy from '@wepy/core'
+  import { numberDesensitization, hasAuthority } from '../../utils/utils';
+  import { getStorage } from '../../wxapi/main';
+
+  wepy.component({
+    data: {
+      // radioChecked: false,
+    },
+    computed: {
+      isDesensPhone() {
+        const account = getStorage('account');
+        const inDesens = !hasAuthority('ROLE_phone_pools:not_view_number')(account && account.authorities)
+        return this.phone && inDesens ? numberDesensitization(this.phone) : this.phone;
+      }
+    },
+    props: {
+      phone: {
+        type: String,
+        default: ''
+      }
+    }
+  });
+</script>
+

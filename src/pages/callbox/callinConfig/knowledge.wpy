@@ -1,0 +1,379 @@
+<template>
+  <scroll-view>
+    <mp-navigation-bar
+      color="{{'rgb(0, 0, 0)'}}"
+      background="white"
+      title="客服知识库"
+      back="{{true}}"
+    ></mp-navigation-bar>
+    <div class="template-infoWrap">
+      <div class="header-div">
+        <div class="select-div">
+          <img class="search-img" src="../../../assist/customer/search.png" />
+          <input
+            class="search-input"
+            v-model="searchInput"
+            placeholder="请输入你需要搜索的客户问题"
+            @input="onChangeSearchInput"
+            placeholder-class="placeholderText"
+          />
+        </div>
+      </div>
+      <div v-if="knowLedgeList && knowLedgeList.length > 0 && !refresh" class="knowledge-list">
+        <view class="knowledge-item" v-for="item in knowLedgeList" :key="item.topicId">
+          <view class="text-title">
+            <view class="text-title-wrapper">
+              <view class="title-text">客户提问：{{item.topicName}}</view>
+            </view>
+            <view class="content-text">{{item.answer}}</view>
+          </view>
+          <view class="divier"></view>
+          <view class="operate-div">
+            <callbox-audio type="editAudition" width="48rpx" height="48rpx" btnType="callDetail"
+                           :params="{voiceType: 23, voiceText:item.answer}"
+                           :audioId="item.topicId"></callbox-audio>
+            <view class="divier-1"></view>
+            <img class="icon-edit" src="../../../assist/calloutentry/edit-1.png" :style="{opacity: item.editable ? 1 : 0.2}" @tap="editKnowledgeFunc(item)" />
+            <view class="divier-2"></view>
+            <img class="icon-delete" src="../../../assist/calloutentry/delete-1.png" @tap="deleteKnowledgeFunc(item)" />
+          </view>
+        </view>
+      </div>
+      <view v-else class="data-empty">
+        <img class="noData-image" src="../../../assist/calloutentry/knowledgeNoData.png" />
+        <view class="text-no">{{currentBox.callinConfig.source ? '暂无数据' : '未绑定知识库'}}</view>
+      </view>
+      <div class="loading-div" v-if="refresh">
+        <mp-loading type="circle"></mp-loading>
+      </div>
+      <view class="opt-div" v-if="hasCreatePhoneKnowledgeAuth">
+        <button type="primary" class="add-add-button" @tap="addKnowLedgeFunc">
+          <view class="button-text">添加问题</view>
+        </button>
+      </view>
+    </div>
+  </scroll-view>
+</template>
+<script>
+import wepy from '@wepy/core';
+import store from '@/store/index';
+import { mapActions, mapState } from '@wepy/x'
+import debounce from 'lodash/debounce';
+import eventHub from '@/common/eventHub'
+import { getStorage } from '../../../wxapi/main'
+import { hasAuthority } from '../../../utils/utils'
+
+wepy.page({
+  store,
+  data: {
+    pageInfo: { pageSize: 10, page: 1, totalCount: 0, },
+    knowLedgeList: [],
+    refresh: false,
+    searchInput: '',
+    knowledgeSource: '',
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+    }),
+    hasCreatePhoneKnowledgeAuth() {
+      const account = getStorage('account');
+      const auth1 = hasAuthority('PHONE_repository_create')(account && account.authorities);
+      const auth2 = hasAuthority('PHONE_repository_Corpus_robotDataReload')(account && account.authorities);
+      const auth3 = hasAuthority('PHONE_single_extend_question')(account && account.authorities);
+      return auth1 && auth2 && auth3;
+    }
+  },
+  methods: {
+    ...mapActions({
+      fetchDeleteKnowledge:'callbox/fetchDeleteKnowledge',
+    }),
+    addKnowLedgeFunc() {
+      this.$navigate('/pages/callbox/callinConfig/editKnowledge?type=add');
+    },
+    editKnowledgeFunc(item) {
+      if (!item.editable) return;
+      this.$navigate(`/pages/callbox/callinConfig/editKnowledge?type=edit&topicName=${item.topicName}&answer=${item.answer}&topicId=${item.topicId}`);
+    },
+    getKnowledgeList(type) {
+      if (type === 'refresh') {
+        this.refresh = true;
+        this.knowLedgeList = [];
+      }
+      const account = getStorage('account');
+      const dataPermission = [];
+      if (hasAuthority('PHONE_repository_Corpus_unitAllViewEdit')(account && account.authorities)) {
+        dataPermission.push('PHONE_repository_Corpus_unitAllViewEdit');
+      }
+      if (hasAuthority('PHONE_repository_Corpus_unitAllViewGroupEdit')(account && account.authorities)) {
+        dataPermission.push('PHONE_repository_Corpus_unitAllViewGroupEdit');
+      }
+      if (hasAuthority('PHONE_repository_Corpus_unitGroupViewEdit')(account && account.authorities)) {
+        dataPermission.push('PHONE_repository_Corpus_unitGroupViewEdit');
+      }
+      if (hasAuthority('PHONE_batch_extend_question')(account && account.authorities)) {
+        dataPermission.push('PHONE_batch_extend_question');
+      }
+      this.$store.dispatch({
+        type: 'callbox/fetchKnowledgeList',
+        payload: {
+          source: this.currentBox ? this.currentBox.callinConfig.source : this.knowledgeSource,
+          permission: dataPermission,
+          ...this.pageInfo,
+          ...(this.searchInput ? {topicName: this.searchInput} : null)
+        },
+        cb: (data) => {
+          this.knowLedgeList = this.knowLedgeList.concat(data.list);
+          this.pageInfo.totalCount = data.totalCount;
+          this.refresh = false;
+        },
+      });
+    },
+    onChangeSearchInput:debounce(function(e) {
+      this.pageInfo = {page: 1, pageSize: 10};
+      this.searchInput = e.$wx.detail.value;
+      this.getKnowledgeList('refresh');
+    }, 1000),
+    deleteKnowledgeFunc(item) {
+      wx.showModal({
+        title: "",
+        content: "确认要删除该客户提问吗？",
+        cancelText: "取消",
+        confirmText: "确认删除",
+        confirmColor: "#FF5B52D9",
+        cancelColor: "#000000A6",
+        success: async (res) => {
+          if (res.confirm) {
+            const res = await this.fetchDeleteKnowledge({topicId: item.topicId,source: this.currentBox.callinConfig.source});
+            if (res.code === 0) {
+              this.getKnowledgeList('refresh');
+            }
+          }
+        }
+      })
+    },
+  },
+  onLoad(option) {
+    const { name, source } = option;
+    this.knowledgeSource = source;
+    this.searchInput = name;
+    this.getKnowledgeList();
+    eventHub.$on('refreshGetKnowLedgeList', () => {
+      this.getKnowledgeList('refresh');
+    })
+  },
+  onReachBottom() {
+    const lastPage = this.pageInfo.totalCount < this.pageInfo.pageSize * this.pageInfo.page;
+    if (this.refresh || lastPage) {
+      return;
+    }
+    this.pageInfo = { ...this.pageInfo, page: this.pageInfo.page + 1 };
+    this.getKnowledgeList();
+  }
+});
+</script>
+<style>
+
+.template-infoWrap {
+  overflow: hidden;
+}
+
+.header-div {
+  position: fixed;
+  z-index: 10;
+  height: 96rpx;
+  width: 100%;
+  background: #FFFFFF;
+  box-shadow: 0px 1px 10px 0px rgba(0,19,48,0.1);
+}
+
+.select-div {
+  display: inline-flex;
+  width: 94%;
+  margin-left: 3%;
+  height: 80rpx;
+  align-items: center;
+  background: rgba(24,118,255,0.04);
+  border-radius: 16rpx;
+  z-index: 11;
+}
+.search-img {
+  width: 32rpx;
+  height: 32rpx;
+  margin:0rpx 8rpx 0rpx 44rpx;
+}
+
+.search-input{
+  text-align: left;
+  font-size: 28rpx;
+  flex: 1;
+}
+
+.opt-div {
+  position: fixed;
+  bottom: 0rpx;
+  padding: 0rpx 32rpx;
+  width: 100%;
+  line-height: 104rpx;
+  height: 128rpx;
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0,19,48,0.10);
+  border-radius: 0 0 16rpx 16rpx;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0,0,0,0.85);
+  padding-bottom: calc( constant(safe-area-inset-bottom));
+  padding-bottom: calc( env(safe-area-inset-bottom));
+}
+@supports not(constant(safe-area-inset-bottom)){
+  page{
+    padding-bottom: 84rpx;
+  }
+}
+
+.add-add-button {
+  line-height: 78rpx;
+  background-image: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+  font-size: 28rpx;
+  color: #FFFFFF;
+  border-radius: 48rpx;
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  width: 670rpx;
+  margin: 16rpx 10rpx;
+}
+.knowledge-list {
+  margin-top: 120rpx;
+  margin-bottom: 160rpx;
+}
+.knowledge-item {
+  box-shadow: 0px 1px 32px 0px rgba(0,19,48,0.1);
+  background-color: rgba(255,255,255,1.000000);
+  border-radius: 16rpx;
+  position: relative;
+  width: 686rpx;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  margin: 32rpx 0 0 34rpx;
+}
+.text-title {
+  width: 622rpx;
+  height: auto;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  margin: 32rpx 0 0 30rpx;
+}
+.text-title-wrapper {
+  width: 622rpx;
+  height: auto;
+  font-size: 0rpx;
+  text-align: left;
+  line-height: 40rpx;
+}
+.title-text {
+  color: rgba(0,0,0,0.85);
+  font-size: 32rpx;
+  line-height: 45rpx;
+  word-wrap: break-word;
+  font-weight: 600;
+}
+.content-text {
+  width: 622rpx;
+  height: auto;
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 28rpx;
+  text-align: left;
+  line-height: 40rpx;
+  margin: 12rpx 0;
+  word-wrap: break-word;
+}
+.operate-div {
+  width: 506rpx;
+  height: 48rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  margin: 52rpx 0 20rpx 88rpx;
+}
+.divier-1 {
+  background-color: rgba(235,235,235,1.000000);
+  width: 1rpx;
+  height: 48rpx;
+  margin-left: 90rpx;
+}
+.icon-edit {
+  height: 44rpx;
+  width: 44rpx;
+  margin: 2rpx 0 0 92rpx;
+}
+.divier-2 {
+  background-color: rgba(235,235,235,1.000000);
+  width: 1rpx;
+  height: 48rpx;
+  margin-left: 92rpx;
+}
+.icon-delete {
+  width: 48rpx;
+  height: 48rpx;
+  margin-left: 90rpx;
+  margin-top: -2rpx;
+}
+.divier {
+  background-color: rgba(235,235,235,1.000000);
+  margin-top: 20rpx;
+  margin-bottom: -20rpx;
+  width: 686rpx;
+  height: 1rpx;
+}
+.data-empty {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.loading-div {
+  width: 100%;
+  padding-bottom: 106rpx;
+}
+.noData-image {
+  width: 430rpx;
+  height: 271rpx;
+  background-size: 100% 100%;
+  margin-top: 283rpx;
+}
+.text-no {
+  color: rgba(0,0,0,0.25);
+  font-size: 28rpx;
+  margin-top: 20rpx;
+}
+.button-text {
+  width: 128rpx;
+  height: 45rpx;
+  overflow-wrap: break-word;
+  color: rgba(255,255,255,1);
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 45rpx;
+  margin: 26rpx 0 0 251rpx;
+}
+.placeholderText {
+  color: rgba(0, 0, 0, 0.2500);
+}
+</style>
+<config>
+{
+navigationBarTitleText: '客服知识库',
+navigationBarBackgroundColor: '#ffffff',
+navigationStyle: 'custom',
+usingComponents: {
+"mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+"mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+"callbox-audio": "../audio/index.wpy",
+}
+}
+</config>

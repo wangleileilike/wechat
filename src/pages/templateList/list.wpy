@@ -1,0 +1,165 @@
+<style lang="less">
+.template-contain {
+    background: #edf0f4;
+    min-height: 100vh;
+}
+scroll-view {
+    height: 100%;
+}
+.customer-list {
+    overflow: hidden;
+}
+.loading-div {
+  width: 100%;
+  padding-bottom: 106rpx;
+  .weui-loadmore {
+    margin: 10rpx 0rpx;
+  }
+}
+</style>
+
+<template>
+    <scroll-view scroll-y="true">
+        <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="话术模板" delta="0" @back="backToBeforePage"></mp-navigation-bar>
+        <view class="template-contain">
+            <div class="customer-list">
+                <templateCard
+                v-for="templateInfo in templateList.list || []"
+                :key="templateInfo.id"
+                v-bind:templateInfo="templateInfo"
+                @jumpToDetail="jumpToDetail"
+                />
+            </div>
+        </view>
+        <div class="loading-div" v-if="refresh">
+            <mp-loading type="circle"></mp-loading>
+        </div> 
+    </scroll-view>
+</template>
+
+<script>
+    import wepy from '@wepy/core'
+    import eventHub from '../../common/eventHub';
+    import { mapState } from '@wepy/x';
+    import store from '../../store';
+    import WXAPI, { getStorage } from '../../wxapi/main';
+    import { hasAuthority } from '../../utils/utils';
+
+    wepy.page({
+        store,
+        data: {
+            pageInfo: { pageSize: 10, pageNum: 1 },
+            templateList: { list: [] },
+            refresh: false,
+            hasTemDetailAuth: false,
+        },
+
+        methods: {
+            fetchTemplateList(type) {
+                if (type == 'refreshTEmplateList') {
+                    this.templateList = { list: [] };
+                }
+                this.refresh = true;
+                this.$store.dispatch({
+                    type: 'template/fetchTemplateList',
+                    payload: {
+                        ...this.pageInfo,
+                        type: 2
+                    },
+                    cb: (data) => {
+                        const newList = [...this.templateList.list, ...data.list];
+                        this.templateList = { ...data, list: newList };
+                        console.log('templateList===>', this.templateList)
+                        this.refresh = false;
+                    },
+                });
+            },
+            async jumpToDetail(templateInfo) {
+                if (this.hasTemDetailAuth) {
+                    if (templateInfo.status === 2) {
+                        wx.showToast({
+                            title: '该模板已下架',
+                            icon: 'none'
+                        });
+                    } else {
+                        const isBusy = await this.checkTemplateInTask(templateInfo.id);
+                        if (isBusy) {
+                           wx.showToast({
+                                title: '该模板正在任务中，无法编辑',
+                                icon: 'none'
+                            });
+                        } else {
+                             this.$navigate(`/pages/templateList/templateDetail`, {
+                                templateId: templateInfo.id
+                            })
+                        }
+                    }
+                } else {
+                    wx.showToast({
+                        title: '无操作权限',
+                        icon: 'none'
+                    });
+                }
+
+            },
+            // 判断模板是否在任务中
+            checkTemplateInTask(templateId) {
+                return new Promise((resolve, reject) => {
+                    this.$store.dispatch({
+                        type: 'template/checkTemplateInTask',
+                        payload: { templateId },
+                        cb: data => {
+                            resolve(data && data.isBusy)
+                        }
+                    })
+                })
+            },
+            backToBeforePage() {
+                const pages = getCurrentPages();
+                const url = "/pages/home";
+                if (pages && pages.length > 1) {
+                    wx.navigateBack();
+                } else {
+                    wx.switchTab({
+                        url: url
+                    })
+                }
+          }
+        
+        },
+        onLoad() {
+            this.fetchTemplateList();
+            const account = getStorage('account');
+            this.authorities = account && account.authorities;
+            this.hasTemDetailAuth = hasAuthority('ROLE_template_manage:detail_view')(this.authorities); // 查看话术模板权限
+        },
+        onShow() {
+            eventHub.$on('refreshTEmplateList', () => {
+                this.fetchTemplateList('refreshTEmplateList');
+            })
+        },
+        onReachBottom() {
+            if (this.refresh || this.templateList.lastPage) {
+                return;
+              }
+              this.pageInfo = { ...this.pageInfo, pageNum: this.pageInfo.pageNum + 1 };
+              this.fetchTemplateList();
+        }
+
+  });
+
+</script>
+
+<config>
+{
+    navigationBarTitleText: '话术模板',
+    navigationStyle: 'custom',
+    usingComponents: {
+        "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+        "templateCard": "./templateCard",
+        "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+    },
+}
+</config>
+
+

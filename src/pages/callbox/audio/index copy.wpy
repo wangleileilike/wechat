@@ -1,0 +1,157 @@
+<template>
+  <div class="audio">
+    <div class="control-process">
+      <div class="play-img-div" @tap="audio_play">
+        <img
+          v-if="is_play"
+          class="play-img"
+          src="/static/images/callbox/voice-0.png"
+        />
+        <img v-else class="play-img" src="/static/images/audio/play.png" />
+      </div>
+      <!-- <span class="current-process">{{current_process}}</span>
+      <slider
+        class="slider" 
+        bindchange="hanle_slider_change" 
+        bindtouchstart="handle_slider_move_start" 
+        bindtouchend="handle_slider_move_end" 
+        :min="0" 
+        :max="slider_max"
+        :value="slider_value"
+        block-size="14" 
+        activeColor="rgba(24,118,255,0.60)" 
+        backgroundColor="rgba(24,118,255,0.08);" 
+      />
+      <span class="total-process">{{total_process}}</span>  -->
+    </div>
+  </div>
+</template>
+
+<style lang="less" scoped>
+@import './index.less';
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import eventHub from '@/common/eventHub';
+
+wepy.component({
+  data: {
+    is_play: false,
+    is_moving_slider: false,
+    slider_max: 1,
+    slider_value: 0,
+    current_process: '00:00',
+    total_process: '00:00',
+    loadFlag: true,
+  },
+
+  methods: {
+    // 拖动进度条，到指定位置
+    hanle_slider_change(e) {
+      const position = e.$wx.detail.value;
+      this.current_process = this.format(position);
+      this.slider_value = Math.floor(position);
+      this.seekCurrentAudio(position);
+    },
+    // 拖动进度条控件
+    seekCurrentAudio(position) {
+      // 更新进度条
+      this.audioCtx.seek(Math.floor(position));
+    },
+    // 进度条滑动
+    handle_slider_move_start() {
+      this.is_moving_slider = true;
+    },
+    handle_slider_move_end() {
+      this.is_moving_slider = false;
+    },
+    // 点击播放暂停
+    audio_play() {
+      if (this.is_play) {
+        this.is_play = false;
+        this.audioCtx.pause();
+      } else {
+        this.is_play = true;
+        // eventHub.$emit('stopAudio');
+        this.audioCtx.play();
+      }
+    },
+    // 时间格式化
+    format(t) {
+      let time =
+        Math.floor(t / 60) >= 10
+          ? Math.floor(t / 60)
+          : '0' + Math.floor(t / 60);
+      t = time + ':' + ((t % 60) / 100).toFixed(2).slice(-2);
+      return t;
+    },
+    stopAudio() {
+      console.log('stopAudio');
+    },
+  },
+  ready() {
+    // eventHub.$on('stopAudio', this.stopAudio);
+    console.log('audio--ready');
+    // 使用 wx.createInnerAudioContext 获取 audio 上下文 context
+    this.audioCtx = wx.createInnerAudioContext();
+    // this.audioCtx.src = this.src;
+    this.audioCtx.src = 'https://www.w3school.com.cn/i/horse.ogg';
+    this.audioCtx.onError((e) => {
+      this.loadFlag = false;
+      console.log('录音加载失败', e);
+    });
+
+    // 音频加载完成回调(设置最大循环次数,避免音频错误导致的死循环)
+    // let index = 0;
+    // const loadDuration = () => {
+    //   if (!this.loadFlag || this.isDelete) {
+    //     return;
+    //   }
+    //   this.audioCtx.duration; // 获取长度前需主动触发取值（bug）
+    //   setTimeout(() => {
+    //     let callDuration = this.callDuration || this.audioCtx.duration || 0;
+    //     if (callDuration === 0 && this.audioCtx.src) {
+    //       if (index < 10) {
+    //         index++;
+    //         loadDuration();
+    //       }
+    //     } else {
+    //       this.total_process = this.format(callDuration);
+    //       this.slider_max = Math.floor(callDuration);
+    //     }
+    //   }, 100);
+    // };
+    // this.audioCtx.onCanplay(loadDuration);
+
+    // //音频播放进度更新事件e
+    // this.audioCtx.onTimeUpdate((e) => {
+    //   if (!this.is_moving_slider) {
+    //     this.current_process = this.format(this.audioCtx.currentTime);
+    //     this.slider_value = Math.floor(this.audioCtx.currentTime);
+    //   }
+    // });
+
+    // 音频播放完毕
+    this.audioCtx.onEnded(() => {
+      // this.slider_value = 0;
+      // this.current_process = '00:00';
+      this.is_play = false;
+    });
+  },
+  detached: function () {
+    if (this.audioCtx) {
+      this.audioCtx.offCanplay();
+      this.audioCtx.offTimeUpdate();
+      this.audioCtx.offEnded();
+      this.audioCtx.offError();
+      this.audioCtx.destroy();
+    }
+  },
+  props: {
+    src: { type: String, default: '' },
+    isDelete: { type: Boolean, default: false },
+    callDuration: { type: Number, default: 0 },
+  },
+});
+</script>

@@ -1,0 +1,232 @@
+<style lang="less" scoped>
+.callout-entry {
+  margin-bottom: 32rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+
+  .header {
+    display: flex;
+    align-items: center;
+    margin: 0 0 20rpx 0;
+
+    .tip-title {
+      font-size: 32rpx;
+      color: rgba(0, 0, 0, 0.85);
+      font-weight: 600;
+    }
+  }
+
+  .entry-container {
+    display: flex;
+    align-items: center;
+  }
+
+  .entry-item {
+    box-sizing: border-box;
+    width: 196rpx;
+    height: 138rpx;
+    border-radius: 12rpx;
+    font-family: PingFangSC-Medium;
+    margin-right: 15rpx;
+    padding: 20rpx;
+    .title {
+        font-size: 26rpx;
+        color: rgba(0,0,0,0.85);
+        letter-spacing: 0;
+        line-height: 30rpx;
+        font-weight: 500;
+        &.disabled {
+          color: rgba(0,0,0,0.45);
+        }
+    }
+    .go {
+        position: relative;
+        font-size: 24rpx;
+        letter-spacing: 0;
+        line-height: 28rpx;
+        font-weight: 600;
+
+        .bg-image {
+            position: absolute;
+            width: 82rpx;
+            height: 86rpx;
+            right: 0;
+            // bottom: 0;
+        }
+    }
+    .customGO {
+      color: #8867eb;
+      &.disabled {
+        color: rgba(0,0,0,0.25);
+      }
+    }
+    .callGO {
+      color: #3ebf77;
+      &.disabled {
+        color: rgba(0,0,0,0.25);
+      }
+    }
+    .tplGo {
+      color: #F29A49;
+      &.disabled {
+        color: rgba(0,0,0,0.25);
+      }
+    }
+    .arrow {
+      display: inline-block;
+      margin-left: 10rpx;
+      border-top: 7rpx solid transparent;
+      border-bottom: 7rpx solid transparent;
+    }
+    .arrow1 {
+      border-left: 7rpx solid #8867eb;
+      &.disabled {
+       border-left: 7rpx solid rgba(0,0,0,0.25);;
+      }
+    }
+    .arrow2 {
+      border-left: 7rpx solid #3ebf77;
+      &.disabled {
+        border-left: 7rpx solid rgba(0,0,0,0.25);
+      }
+    }
+    .arrow3 {
+      border-left: 7rpx solid #F29A49;
+      &.disabled {
+        border-left: 7rpx solid rgba(0,0,0,0.25);
+      }
+    }
+  }
+
+  .customer-entry {
+    background-image: linear-gradient(0deg, #fafcff 0%, #edf4ff 100%);
+    &.disabled {
+      background-image: linear-gradient(0deg, #FAFAFA 0%, #F2F2F2 100%);;
+    }
+  }
+
+  .callout-task-entry {
+    background-image: linear-gradient(0deg, #f7fcfa 0%, #ebfaf1 100%);
+    &.disabled {
+      background-image: linear-gradient(0deg, #FAFAFA 0%, #F2F2F2 100%);;
+    }
+  }
+  .callout-template-entry {
+    background-image: linear-gradient(360deg, #FCFBF7 0%, #FCF6F0 100%);
+    &.disabled {
+      background-image: linear-gradient(0deg, #FAFAFA 0%, #F2F2F2 100%);;
+    }
+  }
+}
+</style>
+<template>
+  <view class="callout-entry">
+    <view class="header">
+      <text class="tip-title">智能外呼</text>
+    </view>
+    <view class="entry-container">
+      <view class="entry-item customer-entry {{customerDisabled}}" bind:tap="gotoCustomer">
+        <label class="title {{customerDisabled}}">客户管理</label>
+        <view class="go customGO {{customerDisabled}}">
+          <label>Go</label>
+          <label class="arrow arrow1 {{customerDisabled}}"></label>
+          <image class="bg-image" src="../../assist/calloutentry/customer.png" />
+        </view>
+      </view>
+      <view bind:tap="gotoTask" class="entry-item callout-task-entry {{taskDiasbled}}">
+        <label class="title {{taskDiasbled}}">外呼任务</label>
+        <view class="go callGO {{taskDiasbled}}">
+          <label>Go</label>
+          <label class="arrow arrow2 {{taskDiasbled}}"></label>
+          <image class="bg-image" src="../../assist/calloutentry/task.png" />
+        </view>
+      </view>
+      <view bind:tap="gotoTemplate" class="entry-item callout-template-entry {{templateDisabled}}">
+        <label class="title {{templateDisabled}}">话术模板</label>
+        <view class="go tplGo {{templateDisabled}}">
+          <label>Go</label>
+          <label class="arrow arrow3 {{templateDisabled}}"></label>
+          <image class="bg-image" src="../../assist/calloutentry/template.png" />
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '../../store/index';
+import { hasAuthority } from '../../utils/utils';
+
+wepy.component({
+  store,
+  hooks: {},
+  props: {
+    authorities: { type: Array }
+  },
+  data: {
+    hasCustomerEntry: false, // 是否有客户管理权限
+    hasTaskEntry: false, // 是否有外呼任务权限
+    hasTemplateEntry: false, // 是否有外呼任务权限
+  },
+  computed: {
+    ...mapState({
+      callboxes: state => state.callbox.callboxes
+    }),
+    taskDiasbled() {
+      return !this.hasTaskEntry ? 'disabled' : ''
+    },
+    customerDisabled() {
+      return !this.hasCustomerEntry ? 'disabled' : ''
+    },
+    templateDisabled() {
+      return !this.hasTemplateEntry ? 'disabled' : '';
+    }
+  },
+  methods: {
+    gotoTask() {
+      if (this.hasTaskEntry) {
+        wx.navigateTo({
+          url: `/pages/task/tasklist`
+        });
+      } else {
+        wx.showToast({
+          title: '暂无此权限',
+          image: '../../../static/images/error.png'
+        });
+      }
+    },
+    gotoCustomer() {
+      if (this.hasCustomerEntry) {
+        wx.navigateTo({
+          url: `/pages/customer/index`
+        });
+      } else {
+        wx.showToast({
+          title: '暂无此权限',
+          image: '../../../static/images/error.png'
+        });
+      }
+    },
+    gotoTemplate() {
+      if (this.hasTemplateEntry) {
+        wx.navigateTo({
+          url: `/pages/templateList/list`
+        });
+      } else {
+        wx.showToast({
+          title: '暂无此权限',
+          image: '../../../static/images/error.png'
+        });
+      }
+    }
+  },
+  ready() {
+    this.hasCustomerEntry = hasAuthority('ROLE_customer_details:list')(this.authorities);
+    this.hasTaskEntry = hasAuthority('ROLE_callout_task_manage:list')(this.authorities);
+    this.hasTemplateEntry = hasAuthority('ROLE_template_manage:list')(this.authorities);
+  }
+});
+</script>

@@ -1,0 +1,303 @@
+<template>
+  <div class="audio">
+    <div class="play-img-div" @tap="audio_play">
+      <div class="play-img" :style="{ height: height, width: width }" v-show="is_play">
+        <img
+          class="image third"
+          src="/static/images/callbox/voice-1.png"
+        />
+        <img
+          class="image second"
+          src="/static/images/callbox/voice-2.png"
+        />
+        <img
+          class="image first"
+          src="/static/images/callbox/voice-3.png"
+        />
+      </div>
+      <div v-show="!is_play" class="play-img" :style="{ height: height, width: width }">
+        <img class="image" v-if="btnType === 'callDetail'" src="/static/images/callbox/voice-disable.png" />
+        <img class="image" v-else src="/static/images/callbox/voice-3.png" />
+      </div>
+      <slot></slot>
+    </div>
+  </div>
+</template>
+
+<style lang="less" scoped>
+@import './index.less';
+.first{
+  position: absolute;
+  /* display: none; */
+  /* height:100px; */
+  animation: firstd 2s infinite linear;
+}
+.second{
+  position: absolute;
+
+  /* display: none; */
+    /* height:0; */
+  // opacity:0%;
+  animation: second 1s infinite  linear;
+}
+.third{
+    position: absolute;
+    /* height:0; */
+  /* display: none; */
+  // opacity:0%;
+  animation: third 4s infinite  linear;
+}
+@keyframes firstd {
+  0% {
+    opacity:100%
+  }
+  33% {
+    opacity:0
+  }
+}
+@keyframes second {
+
+  33% {
+    opacity:100%
+  }
+  66% {
+    opacity: 0
+  }
+}
+@keyframes third {
+  66% {
+    opacity:100%
+  }
+  100% {
+    opacity:0
+  }
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import store from '@/store/index';
+
+import { mapState, mapActions } from '@wepy/x';
+import eventHub from '@/common/eventHub';
+import { fileDownUrl } from '@/services/callbox';
+wepy.component({
+  store,
+  props: {
+    btnType: { type: String, default: '' },
+    isDelete: { type: Boolean, default: false },
+    callDuration: { type: Number, default: 0 },
+    audioId: { type: [Number,String], default: -1 },
+    src: { type: String, default: '' },
+    type: {type: String, default: ''},
+    width: {type: String, default: '32rpx'},
+    height: {type: String, default: '32rpx'},
+    params: {type: Object, default: ()=>{return {voiceType:'',voiceText:''}}}
+  },
+  data: {
+    is_play: false,
+    is_moving_slider: false,
+    slider_max: 1,
+    slider_value: 0,
+    current_process: '00:00',
+    total_process: '00:00',
+    loadFlag: true,
+    timer: null,
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+    }),
+  },
+  // watch:{
+  //   src(newVal,oldVal){
+  //     console.log(newVal,oldVal,'newVal,oldVal')
+  //   }
+  // },
+  methods: {
+    ...mapActions({
+      taskSubmit:'callbox/taskSubmit',
+      taskResult:'callbox/taskResult'
+    }),
+    onSubmit(){
+      const { voiceType, voiceText } = this.params
+      // console.log(voiceText,'this.auditionText')
+      if(!voiceText){
+        wx.showToast({
+              title: '内容不能为空',
+              icon: 'none',
+            });
+      }
+      const params={
+          source:this.currentBox.callinConfig.source,
+          type:23,
+          params:{
+            voiceType:voiceType,
+            text:voiceText
+          }
+      }
+      this.taskSubmit(params).then(res=>{
+        wx.showLoading({
+          title: '语音合成中',
+          mask: true
+        })
+        this.getTaskResult(res.data)
+      })
+    },
+    async getTaskResult(taskId){
+      if(this.timer){
+        clearTimeout(this.timer);
+      }
+      try {
+        const res = await this.taskResult({taskId,source:this.currentBox.callinConfig.source});
+        if(res.code===0){
+          if(res.data&&res.data.voiceUrl){
+            this.audioCtx.src = encodeURI(fileDownUrl(res.data.voiceUrl));
+            this.audioCtx.play();
+            this.is_play = true;
+          }
+          wx.hideLoading()
+        }else if(res.code===1){
+          this.timer=setTimeout(()=>{
+            this.getTaskResult(taskId)
+          },1000)
+        }else{
+          wx.hideLoading();
+          wx.showToast({
+                title: res.msg,
+                icon: 'none'
+              });
+        }
+      } catch (error) {
+        console.log(error,'error')
+          wx.hideLoading()
+      }
+    },
+    // 拖动进度条，到指定位置
+    hanle_slider_change(e) {
+      const position = e.$wx.detail.value;
+      this.current_process = this.format(position);
+      this.slider_value = Math.floor(position);
+      this.seekCurrentAudio(position);
+    },
+    // 拖动进度条控件
+    seekCurrentAudio(position) {
+      // 更新进度条
+      this.audioCtx.seek(Math.floor(position));
+    },
+    // 进度条滑动
+    handle_slider_move_start() {
+      this.is_moving_slider = true;
+    },
+    handle_slider_move_end() {
+      this.is_moving_slider = false;
+    },
+    // 点击播放暂停
+    audio_play() {
+      if (this.is_play) {
+        this.is_play = false;
+        this.audioCtx.stop();
+      } else {
+        eventHub.$emit('stopAudio', this.audioId);
+        // console.log(this.audioId, 'paly,,this.audioId');
+        if(this.type==='editAudition'){
+          this.onSubmit()
+        }else{
+          this.audioCtx.src = encodeURI(fileDownUrl(this.src));
+          // console.log(encodeURI(fileDownUrl(this.src)))
+          this.is_play = true;
+          this.audioCtx.play();
+        }
+      }
+    },
+    // 时间格式化
+    format(t) {
+      let time =
+        Math.floor(t / 60) >= 10
+          ? Math.floor(t / 60)
+          : '0' + Math.floor(t / 60);
+      t = time + ':' + ((t % 60) / 100).toFixed(2).slice(-2);
+      return t;
+    },
+    stopAudio(audioId) {
+      if (this.is_play && audioId !== this.audioId) {
+        // console.log(this.audioId, 'stop,,this.audioId');
+        this.is_play = false;
+        this.audioCtx.stop();
+      }
+    },
+  },
+  ready() {
+    eventHub.$on('stopAudio', (audioId) => {
+      this.stopAudio(audioId);
+    });
+    // 使用 wx.createInnerAudioContext 获取 audio 上下文 context
+    this.audioCtx = wx.createInnerAudioContext();
+    // console.log(fileDownUrl(this.src),'this.src')
+    // if(this.src){
+    //   this.audioCtx.src = fileDownUrl(this.src);
+    // }
+    // this.audioCtx.src = 'https://www.w3school.com.cn/i/horse.ogg';
+    this.audioCtx.onError((e) => {
+      this.loadFlag = false;
+      wx.showToast({
+        title: '录音加载失败',
+        icon: 'none'
+      });
+      console.log('录音加载失败', e);
+    });
+
+    // 音频加载完成回调(设置最大循环次数,避免音频错误导致的死循环)
+    // let index = 0;
+    // const loadDuration = () => {
+    //   if (!this.loadFlag || this.isDelete) {
+    //     return;
+    //   }
+    //   this.audioCtx.duration; // 获取长度前需主动触发取值（bug）
+    //   setTimeout(() => {
+    //     let callDuration = this.callDuration || this.audioCtx.duration || 0;
+    //     if (callDuration === 0 && this.audioCtx.src) {
+    //       if (index < 10) {
+    //         index++;
+    //         loadDuration();
+    //       }
+    //     } else {
+    //       this.total_process = this.format(callDuration);
+    //       this.slider_max = Math.floor(callDuration);
+    //     }
+    //   }, 100);
+    // };
+    // this.audioCtx.onCanplay(loadDuration);
+
+    // //音频播放进度更新事件e
+    // this.audioCtx.onTimeUpdate((e) => {
+    //   if (!this.is_moving_slider) {
+    //     this.current_process = this.format(this.audioCtx.currentTime);
+    //     this.slider_value = Math.floor(this.audioCtx.currentTime);
+    //   }
+    // });
+    this.audioCtx.onCanplay(() => {
+      // this.slider_value = 0;
+      // this.current_process = '00:00';
+      console.log('canplay')
+    });
+    // 音频播放完毕
+    this.audioCtx.onEnded(() => {
+      // this.slider_value = 0;
+      // this.current_process = '00:00';
+      this.is_play = false;
+    });
+  },
+  detached: function () {
+    clearTimeout(this.timer)
+    if (this.audioCtx) {
+      this.audioCtx.stop();
+      this.audioCtx.offCanplay();
+      this.audioCtx.offTimeUpdate();
+      this.audioCtx.offEnded();
+      this.audioCtx.offError();
+      this.audioCtx.destroy();
+    }
+  },
+});
+</script>

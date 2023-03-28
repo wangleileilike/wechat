@@ -1,0 +1,38 @@
+.audio {
+  padding: 0rpx 24rpx;
+  border-radius: 44rpx;
+  display: flex;
+  justify-content: center;
+}
+.play-img-div {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 100rpx;
+  height: 100rpx;
+  border-radius: 56rpx;
+  margin-right: 24rpx;
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+}
+.play-img-div .play-img {
+  width: 60rpx;
+  height: 60rpx;
+}
+.current-process,
+.total-process {
+  font-family: PingFangSC-Regular;
+  font-size: 24rpx;
+  color: rgba(0, 0, 0, 0.65);
+  text-align: justify;
+}
+/* 音频滚动条start */
+.control-process {
+  margin-top: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+.control-process .slider {
+  flex: 1;
+}

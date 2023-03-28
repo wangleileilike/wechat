@@ -1,0 +1,80 @@
+<style lang="less">
+  .picker-div {
+    .placehoder-span {
+      color: rgba(0,0,0,0.65)
+    }
+
+    .picker-img {
+      width: 24rpx;
+      height: 24rpx;
+    }
+  }
+
+  .add-task-title-div {
+    .add-task-img {
+      float: right;
+      width: 28rpx;
+      height: 28rpx;
+    }
+  }
+</style>
+<template>
+  <div>
+    <div class="picker-div" @tap="onHandleShowPicker">
+      <span v-if="value">{{value}}</span>
+      <span v-else class="placehoder-span">{{placehoder}}</span>
+      <img class="picker-img" src="../../assist/customer/drop-down.png"/>
+    </div>
+    <mp-half-screen-dialog extClass="task-half-screen-dialog" :show="showPicker" :closabled="false" :maskClosable="false">
+      <div slot="title" class="add-task-title-div">
+        <span class="add-task-title">{{title}}</span>
+        <img src="../../assist/customer/shut-down.png" class="add-task-img" @tap="onCloseTaskDialog"/>
+      </div>
+      <div slot="desc">
+        <slot name="desc"></slot>
+      </div>
+    </mp-half-screen-dialog>
+  </div>
+</template>
+<script>
+  import wepy from '@wepy/core'
+
+  wepy.component({
+    options: {
+      multipleSlots: true,
+    },
+    data: {
+      showPicker: false,
+    },
+    methods: {
+      onHandleShowPicker() {
+        this.showPicker = true;
+      },
+      onCloseTaskDialog() {
+        this.showPicker = false;
+      },
+    },
+    created() {
+      this.close = this.onCloseTaskDialog;
+    },
+    props: {
+      value: {type: String, default: ''},
+      placehoder: {type: String, default: ''},
+      title: {type: String, default: ''}
+    },
+    // 自定义验证函数
+    close: {
+      validator: function (value) {
+        return true
+      }
+    }
+  });
+</script>
+<config>
+{
+  usingComponents: {
+    "mp-half-screen-dialog": "module:weui-miniprogram/miniprogram_dist/half-screen-dialog/half-screen-dialog",
+  }
+}
+</config>
+

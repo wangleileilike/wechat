@@ -1,0 +1,163 @@
+<template>
+  <view class="wrap">
+    <view class="callbox-list">
+      <view class="header">
+        <text class="tip-title"
+          >电话机ID：<text class="tip-title-id">{{
+            currentBox.telId
+          }}</text></text
+        >
+        <text class="tip-status" style="color: {{states[currentBox.state][1]}}">{{
+          states[currentBox.state][0]
+        }}</text>
+      </view>
+      <view class="">
+        <view class="detail-item">
+          <text class="detail-item-label">生效时间：</text>
+          <text class="detail-item-value">{{ formatValidDate || '-' }}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-item-label">截止时间：</text>
+          <text class="detail-item-value">{{ formatExpireDate || '-' }}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-item-label">序列号：</text>
+          <text class="detail-item-value">{{ currentBox.serial || '-' }}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-item-label">呼出机器人：</text>
+          <text class="detail-item-value">{{
+            (currentBox.calloutConfig && currentBox.calloutConfig.robotNo) || '-'
+          }}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-item-label">呼入机器人：</text>
+          <text class="detail-item-value">{{
+            (currentBox.callinConfig && currentBox.callinConfig.sourceName) || '-'
+          }}</text>
+        </view>
+        <view class="detail-item">
+          <text class="detail-item-label">运行状态：</text>
+          <text class="detail-item-value">{{runStates[runState]}}</text>
+        </view>
+      </view>
+    </view>
+  </view>
+</template>
+
+<style lang="less" scoped>
+.wrap{
+  padding: 32rpx;
+}
+.callbox-list {
+  // margin: 32rpx 32rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding-bottom: 24rpx;
+    margin-bottom: 24rpx;
+    border-bottom: 1rpx solid #ebebeb;
+
+    .tip-title {
+      font-size: 32rpx;
+      color: rgba(0, 0, 0, 0.85);
+      font-weight: 600;
+      .tip-title-id {
+        font-size: 32rpx;
+        color: rgba(0, 0, 0, 0.85);
+      }
+    }
+    .tip-status {
+      font-size: 24rpx;
+      color: #1876ff;
+    }
+  }
+  .detail-item {
+    margin-bottom: 24rpx;
+    .detail-item-label {
+      width: 180rpx;
+      display: inline-block;
+      font-size: 28rpx;
+      color: rgba(0, 0, 0, 0.45);
+    }
+    .detail-item-value {
+      font-size: 28rpx;
+      color: rgba(0, 0, 0, 0.65);
+    }
+  }
+  .swiper-container {
+    height: 174rpx;
+
+    .swiper-item {
+      width: 256rpx !important;
+    }
+  }
+  .callbox-empty {
+    height: 172rpx;
+    text-align: center;
+    line-height: 172rpx;
+    font-size: 24rpx;
+    color: rgba(0, 0, 0, 0.45);
+    font-weight: 400;
+  }
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '../../store/index';
+import moment from 'moment';
+
+wepy.component({
+  store,
+  data: {
+    states: {
+      valid: ['使用中', '#48d271'],
+      overdue: ['即将到期', '#ff5b52'],
+      expired: ['已到期', '#656464'],
+      renew: ['到期延期中', '#1876ff'],
+      reserved: ['已预定', '#6c56ee'],
+    },
+    // radioChecked: false,
+    // 运行状态
+      runStates: {
+          registered: '正常',
+          unRegistered: '注册异常'
+      }
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+    }),
+    formatValidDate() {
+      return this.currentBox && this.currentBox.validDate
+        ? moment(this.currentBox.validDate).format('YYYY-MM-DD HH:mm')
+        : '';
+    },
+    formatExpireDate() {
+      return this.currentBox && this.currentBox.expireDate
+        ? moment(this.currentBox.expireDate).format('YYYY-MM-DD HH:mm')
+        : '';
+    },
+    runState() {
+        const state = this.currentBox && this.currentBox.state;
+        // 电话机为 使用中 和 即将到期 根据返回runState展示，其他状态，全部显示为注册异常
+        if (['valid', 'overdue'].indexOf(state) >= 0) {
+            return this.currentBox && this.currentBox.runState || 'unRegistered'
+        } else {
+            return 'unRegistered'
+        }
+    }
+  },
+  methods: {},
+  props: {
+  },
+});
+</script>

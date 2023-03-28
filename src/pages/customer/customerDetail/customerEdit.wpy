@@ -1,0 +1,541 @@
+<template>
+  <mp-form :rules="rules" :models="formData" id="customerForm" ext-class="mp-form-div">
+    <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="{{pageTitle}}"></mp-navigation-bar>
+    <div class="card">
+      <div class="title-div">
+        <img class="base-img" src="../../../assist/customer/baseInformation.png"/>
+        <span class="customer-title">基本资料</span>
+      </div>
+      <mp-cells>
+        <mp-cell prop="phone" ext-class="">
+          <span slot="icon" class="required-span">*</span>
+          <span slot="title">电话号码:</span>
+          <input slot="footer" :value="isDesensPhone" @input="onChangeCustomerPhone" :disabled="type==='edit'" :style="{color: type==='edit'?'gray':''}" placeholder="请输入正确的电话号码" />
+        </mp-cell>
+        <mp-cell prop="customerName" ext-class="">
+          <span slot="title">姓名:</span>
+          <input slot="footer" :value="formData.customerName" @input="onChangeCustomerInfo($wx, 'customerName')" :style="{color: type==='edit'?'gray':''}" placeholder="请输入姓名" />
+        </mp-cell>
+        <mp-cell prop="customerWechat" ext-class="">
+          <span slot="title">微信号:</span>
+          <input slot="footer" :value="formData.customerWechat" @input="onChangeCustomerInfo($wx, 'customerWechat')" :style="{color: type==='edit'?'gray':''}" placeholder="请输入微信" />
+        </mp-cell>
+        <mp-cell prop="customerEmail" ext-class="">
+          <span slot="title">邮箱:</span>
+          <input slot="footer" :value="formData.customerEmail" @input="onChangeCustomerInfo($wx, 'customerEmail')" :style="{color: type==='edit'?'gray':''}" placeholder="请输入邮箱" />
+        </mp-cell>
+        <mp-cell prop="customerAddress" ext-class="">
+          <span slot="title">地址:</span>
+          <input slot="footer" :value="formData.customerAddress" @input="onChangeCustomerInfo($wx, 'customerAddress')" :style="{color: type==='edit'?'gray':''}" placeholder="请输入地址" />
+        </mp-cell>
+        <mp-cell prop="tag" ext-class="customer-cell">
+          <span slot="icon" class="required-hide">*</span>
+          <span slot="title">客户标签:</span>
+          <div class="customer-tag-div">
+            <div class="tag-div" v-for="(key, index) in (formData.tag || [])" :key="key-index">
+              {{key.tag}}
+              <mp-icon type="field" icon="close2" color="red" extClass="tag-delete-icon" @tap="onClickDeleteTags(key)"/>
+            </div>
+            <!-- <div class="tag-add-div" @tap="onHandleClickAddTag">+添加标签</div> -->
+            <tagSelect slot="footer" @change="onHandleTagChange" @columnchange="onHandleTagColumnChange" rangKey="catalogueName" rangValue="catalogueName" :selectData="tagList" placehoder="+添加标签" />
+          </div>
+        </mp-cell>
+        <!-- <mp-cell prop="tag" ext-class="customer-cell" v-if="type === 'edit'">
+          <span slot="icon" class="required-hide">*</span>
+          <span slot="title">系统标签:</span>
+          <div class="customer-tag-div">
+            <div class="tag-div" v-for="item in systemTagSelect" :key="item.key" v-if="item.checked">
+              {{item.key}}
+            </div>
+            <div class="tag-add-div" @tap="onHandleAddSystemTag">+添加标签</div>
+          </div>
+        </mp-cell> -->
+        <!-- <mp-cell prop="deptId" ext-class="" v-if="isDepartmentAccount" key="deptId">
+          <span slot="icon" class="required-span">*</span>
+          <span slot="title">所属部门:</span>
+          <pickerSelect slot="footer" @change="onHandleDeptChange" :value="formData.deptId" :selectData="departmentList" rangKey="name" rangValue="id" :disabled="type==='edit'" placehoder="请选择部门"/>
+        </mp-cell> -->
+        <mp-cell prop="principalId" ext-class="">
+          <span slot="icon" class="required-hide">*</span>
+          <span slot="title">负责人:</span>
+          <pickerSelect slot="footer" @change="onHandleUserChange" :value="formData.principalId" :selectData="userList" rangKey="accountName" rangValue="id" placehoder="请选择负责人"/>
+        </mp-cell>
+      </mp-cells>
+    </div>
+    <div class="card other-div">
+      <div class="title-div">
+        <img class="base-img" src="../../../assist/customer/advancedSettings.png"/>
+        <span class="customer-title">其他设置</span>
+      </div>
+      <mp-cells>
+        <block v-for="(item, index) in (formData.dynamicPropertiesList || [])" :key="item.value">
+          <mp-slideview :buttons="[{text: '删除', type: 'warn'}]" :data-index="index" @buttontap="onDeleteDynamicInfo">
+            <mp-cell>
+              <pickerSelect slot="title" @change="onHandleChangeDynamicSelect" :value="formData.dynamicPropertiesList[index].key" :index="index" :selectData="dynamicPropList" :hasSelect="getSelectDynamic" rangKey="name" rangValue="name" placehoder="请选择自定义字段"/>
+              <!-- <input slot="footer" :data-index="index" @change="onHandleChangeDynamicInput" :value="formData.dynamicPropertiesList[index].value" placeholder="请输入客户信息"/> -->
+              <!-- 文本类型 -->
+              <input v-if="(!formData.dynamicPropertiesList[index].fieldType || formData.dynamicPropertiesList[index].fieldType.type === 'text')" slot="footer" :data-index="index" @change="onHandleChangeDynamicInput($wx, index, 'text')" :value="formData.dynamicPropertiesList[index].value" placeholder="请输入客户信息"/>
+              <!-- 选择类型 -->
+              <picker slot="footer" v-if="formData.dynamicPropertiesList[index].fieldType.type === 'option'" @change="onHandleChangeDynamicInput($wx, index, 'option')" :value="formData.dynamicPropertiesList[index].value" :range="formData.dynamicPropertiesList[index].fieldType.options">
+                  <span class="placehoder-span">{{formData.dynamicPropertiesList[index].value || '请选择字段值'}}</span>
+                  <img class="picker-img" src="../../../assist/customer/drop-down.png"/>
+              </picker>
+              <!-- 时间类型 -->
+              <picker slot="footer" v-if="formData.dynamicPropertiesList[index].fieldType.type === 'time'" mode="date" @change="onHandleChangeDynamicInput($wx, index, 'time')" :value="formData.dynamicPropertiesList[index].value">
+                  <span class="placehoder-span">{{formData.dynamicPropertiesList[index].value || '请选择日期'}}</span>
+                  <img class="picker-img" src="../../../assist/customer/drop-down.png"/>
+              </picker>
+              <!-- 地址类型 -->
+              <picker slot="footer" v-if="formData.dynamicPropertiesList[index].fieldType.type === 'address'" mode="region" @change="onHandleChangeDynamicInput($wx, index, 'address')" :value="getAddress(formData.dynamicPropertiesList[index].value)">
+                  <span class="placehoder-span">{{formData.dynamicPropertiesList[index].value || '请选择地址'}}</span>
+                  <img class="picker-img" src="../../../assist/customer/drop-down.png"/>
+              </picker>
+            </mp-cell>
+          </mp-slideview>
+        </block>
+        <mp-cell>
+          <div class="add-more-div" @tap="onHandleClickMore">+继续添加</div>
+        </mp-cell>
+      </mp-cells>
+    </div>
+    <div class="submit-div">
+      <button class="cancel-btn" @tap="onCancel">取消</button>
+      <button class="submit-btn" :loading="submitLoading" :disabled="submitLoading" type="primary" @tap="onSubmit">保存</button>
+    </div>
+    <!-- <mp-half-screen-dialog extClass="add-tag-dialog" :show="showAddUserTag" :closabled="false" :maskClosable="false">
+      <div slot="title" class="add-tag-title-div">
+        <span @tap="onHandleCancelAddTag" class="add-tag-cancel">取消</span>
+        <span class="add-tag-title">添加标签</span>
+        <span @tap="onHandleSubmitTag" class="add-tag-submit">完成</span>
+      </div>
+      <div slot="desc">
+        <input placeholder="请输入标签内容,最多不超过6个字" class="tag-input" :maxlength="6" v-model="addTagInputValue"/>
+      </div>
+    </mp-half-screen-dialog> -->
+    <!-- <mp-half-screen-dialog extClass="add-tag-dialog" :show="showAddSystemTag" :closabled="false" :maskClosable="false">
+      <div slot="title" class="add-tag-title-div">
+        <span class="add-tag-title add-tag-left">选择系统标签</span>
+        <img src="../../../assist/customer/shut-down.png" class="add-tag-x" @tap="onHandleCancelAddSystemTag"/>
+      </div>
+      <div slot="desc">
+        <div v-for="item in systemTagSelect" :key="item.value" class="system-select-tag" @tap="onHandleSystemSelected(item)">
+          <span class="system-tag">{{item.key}}</span>
+          <img v-if="item.checked" src="../../../asset/task/selected.png" class="system-selected"/>
+          <span v-else></span>
+        </div>
+      </div>
+    </mp-half-screen-dialog> -->
+     <mp-toptips :show="errorMessage" :msg="errorMessage" @hide="errorMessage = ''" type="warn" ext-class="toptips"></mp-toptips>
+  </mp-form>
+</template>
+
+<style lang="less" scoped>
+  @import './customerEdit.less';
+</style>
+
+<script>
+  import wepy from '@wepy/core';
+  import store from '@/store';
+  import { mapState } from '@wepy/x';
+  import { numberDesensitization, hasAuthority } from '../../../utils/utils';
+  import { getStorage } from '../../../wxapi/main';
+  import eventHub from '../../../common/eventHub';
+  wepy.page({
+    store,
+    data: {
+      type: '', // 页面类型（编辑或新增）
+      formData: {}, // 存储表单真实value
+      isForce: false, // 是否强制更新
+      rules: [
+        {name: 'phone', rules: [
+          {validator: (rule, value, param, models) => {
+            if (!value || !`${value}`.trim()) {
+              return '请输入手机号码';
+            }
+          }}]
+        },
+        // {name: 'deptId', rules: [
+        //   {required: true, message: '请选择所属部门'}
+        // ]}
+      ],
+      errorMessage: '',
+      departmentList: [],
+      tagList: [],
+      tagListAll: [],
+      userList: [],
+      dynamicPropList: [],
+      showAddUserTag: false,
+      showAddSystemTag: false,
+      addTagInputValue: '',
+      systemTagSelect: [
+        {key: '秒挂', value: 'hangUpInstantly'},
+        {key: '投诉', value: 'complaint'},
+        {key: '静默', value: 'silent'},
+        // {key: '空号', value: 'phoneEmpty', extra: '根据同花顺数据最后一次外呼为空号'},
+        // {key: '行业无意向', value: 'noIntention', extra: '根据同花顺数据判断对模板行业无意向'},
+      ],
+      pageTitle: '',
+      submitLoading: false,
+      // radioChecked: false,
+    },
+    computed: {
+      ...mapState({
+        customerInfo: state => state.customer.customerInfo
+      }),
+      getSelectDynamic() {
+        return (this.formData.dynamicPropertiesList || []).map(item => item.key)
+      },
+      isDesensPhone() {
+        const account = getStorage('account');
+        const inDesens = !hasAuthority('ROLE_phone_pools:not_view_number')(account && account.authorities)
+        return this.formData.phone && inDesens && this.type === 'edit' ? numberDesensitization(this.formData.phone) : this.formData.phone;
+      },
+      isDepartmentAccount() {
+        const account = getStorage('account');
+        return account && account.isDepartmentAccount;
+      },
+      getAddress() {
+        return function(str) {
+          if (!str) {
+            return str
+          }
+          return str.split('-')
+        }
+      }
+    },
+    methods: {
+      fetchDeptList() {
+        this.$store.dispatch({
+          type: 'customer/fetchDeptList',
+          payload: {
+            pageNum: 1,
+            pageSize: 9999,
+          },
+          cb: (data) => {
+            const { department } = getStorage('account') || {};
+            const departments = department && department.map(a => a.id);
+            this.departmentList = departments && (data.list || []).filter(a => departments.indexOf(a.id) !== -1) || data.list;
+          }
+        });
+      },
+      // 获取客户标签列表
+      fetchTagList() {
+        this.$store.dispatch({
+          type: 'customer/fetchTagList',
+          cb: (data) => {
+            this.tagListAll = data || [];
+            // 组合接口返回的数据形式
+            const firstArr = (data || []).map(item => ({ catalogueName: item.catalogueName }));
+            let secondArr = [];
+            // if (firstArr && firstArr.length) {
+            //   for (let x = 0; x < data.length; x++) {
+            //     const element1 = data[x];
+            //     const tags = element1.tags || [];
+            //     for (let y = 0; y < tags.length; y++) {
+            //       const element2 = tags[y];
+            //       const tagName = element2.tagName;
+            //       secondArr.push({catalogueName: tagName});
+            //     }
+            //   }
+            // };
+            if (data && data.length && data[0].tags && data[0].tags.length) {
+              const tags = data[0].tags || [];
+              for (let y = 0; y < tags.length; y++) {
+                  const element2 = tags[y];
+                  const tagName = element2.tagName;
+                  secondArr.push({catalogueName: tagName});
+                }
+            }
+            this.tagList = [firstArr, secondArr];
+          }
+        });
+      },
+      fetchcaList(id){
+        const params = {
+          pageNum: 1,
+          pageSize: 9999,
+        }
+        if (id && id != 0) {
+          params.deptId = id;
+        }
+        this.$store.dispatch({
+          type: 'customer/fetchcaList',
+          payload: params,
+          cb: (data) => {
+            this.userList = (data.list || []).map(item => ({id: item.id, username: item.username, accountName: item.accountName, nickName: item.nickName}));
+          }
+        });
+      },
+      fetchDynamicProp() {
+        this.$store.dispatch({
+          type: 'customer/fetchDynamicProp',
+          payload: {
+            pageNum: 1,
+            pageSize: 9999,
+          },
+          cb: (data) => {
+            const filterArr = ['name', 'email', 'address', 'wechat'];
+            this.dynamicPropList = data.list && data.list.filter(item => filterArr.indexOf(item.name) < 0);
+            if (this.type === 'edit' && this.formData.dynamicPropertiesList && this.formData.dynamicPropertiesList.length) {
+              let dynamicPropertiesList = this.formData.dynamicPropertiesList.map(dynamic => {
+                  const thisDynamic = this.dynamicPropList.filter(item => item.name === dynamic.key);
+                  return {  
+                    ...dynamic,
+                    fieldType: thisDynamic && thisDynamic[0] && thisDynamic[0].fieldType
+                  } 
+                }
+              )
+              this.formData = {
+                ...this.formData,
+                dynamicPropertiesList,
+              };
+            }
+          }
+        });
+      },
+      onChangeCustomerPhone(e) {
+        const value = e.$wx.detail.value;
+        this.formData = {...this.formData, phone: value};
+      },
+      onChangeCustomerInfo(e, type) {
+        const value = e.detail.value;
+        this.formData = {...this.formData, [type]: value};
+      },
+      onHandleClickMore() {
+        let { dynamicPropertiesList=[] } = this.formData;
+        dynamicPropertiesList = dynamicPropertiesList.concat({key: '',value: ''});
+        this.formData = {...this.formData, dynamicPropertiesList};
+      },
+      onHandleAddSystemTag() {
+        this.showAddSystemTag = true;
+      },
+      onHandleCancelAddSystemTag() {
+        this.showAddSystemTag = false;
+      },
+      // 选择系统标签
+      onHandleSystemSelected(item) {
+        let tag = (this.formData.systemTag || []).filter(value => value !== item.value);
+        if (tag.length === (this.formData.systemTag || []).length) {
+          tag = tag.concat([item.value]);
+        }
+        this.formData = {...this.formData, systemTag: tag};
+        const newSystemTag = this.systemTagSelect.map(item => {
+         return {...item, checked: tag.indexOf(item.value) >= 0}
+        })
+        this.systemTagSelect = newSystemTag;
+      },
+      onHandleClickAddTag() {
+        this.showAddUserTag = true;
+      },
+      onHandleCancelAddTag() {
+        this.addTagInputValue = '';
+        this.showAddUserTag = false;
+      },
+      // 选择客户标签
+      // onHandleSubmitTag() {
+      //   if ((this.formData.tag || []).indexOf(this.addTagInputValue) >= 0) {
+      //     this.errorMessage = '该标签已存在！';
+      //     return;
+      //   }
+      //   const tag = (this.formData.tag || []).concat(this.addTagInputValue);
+      //   if (tag.length >= 4) {
+      //     this.errorMessage = '最多支持输入三个标签！';
+      //     return;
+      //   }
+      //   this.formData = {...this.formData, tag}; 
+      //   this.showAddUserTag = false;
+      //   this.addTagInputValue = '';
+      // },
+      // 下拉选择客户标签
+      onHandleTagChange(data) {
+        const isHas = (this.formData.tag || []).filter(flag => flag.catalogue === data.catalogue && flag.tag === data.tag)
+        if (isHas && isHas.length) {
+           this.errorMessage = '该标签已存在！';
+            return;
+        }
+        const tag = (this.formData.tag || []).concat(data);
+        this.formData = {...this.formData, tag}; 
+      },
+      onHandleTagColumnChange(index) {
+        this.tagList = [this.tagList[0], this.tagListAll[index].tags.map(item => ({ catalogueName: item.tagName }))];
+      },
+      onClickDeleteTags(key) {
+        const tag = this.formData.tag.filter(tag => !(tag.catalogue === key.catalogue && tag.tag === key.tag));
+        this.formData = {...this.formData, tag};
+      },
+      onClickDeleteSystemTags(key) {
+        const tag = this.formData.tag.filter(tag => tag !== key);
+        this.formData = {...this.formData, systemTag: tag};
+      },
+      // 选择自定义字段key
+      onHandleChangeDynamicSelect(data, index) {
+        this.formData.dynamicPropertiesList[index].key = data.name;
+        this.formData.dynamicPropertiesList[index].fieldType = data.fieldType; // 表示当前选择的动态字段是什么类型
+        this.formData = { ...this.formData, dynamicPropertiesList: this.formData.dynamicPropertiesList }
+      },
+      // 选择自定义字段的value
+      onHandleChangeDynamicInput(e, index, type) {
+        if (type === 'time' || type === 'text') {
+          this.formData.dynamicPropertiesList[index].value = e.detail.value;
+        } else if (type === 'option') {
+          const options = this.formData.dynamicPropertiesList[index].fieldType.options;
+          const seletIndex = Number(e.detail.value);
+          this.formData.dynamicPropertiesList[index].value = options[seletIndex];
+        } else if(type === 'address') {
+          this.formData.dynamicPropertiesList[index].value = e.detail.value.join('-');
+        }
+      },
+      onDeleteDynamicInfo(e) {
+        const index = e.currentTarget.dataset.index;
+        this.formData.dynamicPropertiesList = this.formData.dynamicPropertiesList.filter((item, i) => i!==index)
+      },
+      onHandleDeptChange(data) {
+        if (data.id === this.formData.deptId) {
+          return;
+        }
+        this.formData = {...this.formData, deptId: data.id, principalId: ''};
+        this.fetchcaList(data.id);
+      },
+      onHandleUserChange(data) {
+        this.formData = {...this.formData, principalId: data.id, principalName: data.accountName};
+      },
+      onSubmit() {
+        this.errorMessage = '';
+        this.$wx.selectComponent('#customerForm').validate((valid, errors) => {
+          if (!valid) {
+              return;
+          }
+          const userInfo = getStorage('account') || {};
+          const account = userInfo.accountInfo || {};
+          const {dynamicPropertiesList, tag, ...params} = this.formData;
+          params.isForce = this.isForce;
+          if (tag && tag.length) {
+            params.customerTags = tag;
+          }
+          const dynamicProperties = {};
+          (this.formData.dynamicPropertiesList || []).forEach(item => {
+            if (item.key && item.value) {
+              dynamicProperties[item.key] = item.value;
+            }
+          })
+          params.dynamicProperties = dynamicProperties;
+          // 顶级部门且新建的时候标记为默认部门
+          // if (!this.isDepartmentAccount && this.type !== 'edit') {
+          //   params.deptId = 0;
+          // }
+          if (this.type === 'edit') {
+            params.id = this.customerInfo.id;
+          }
+          params.companyId = account.companyId;
+          this.submitLoading = true;
+          let funType = this.type === 'edit' ? 'saveEditCustomer' : 'saveAddCustomer';
+          this.$store.dispatch({
+            type: `customer/${funType}`,
+            payload: params,
+            cb: (data) => {
+              this.onConfirmSubmit(data);
+              this.submitLoading = false;
+            }
+          }).catch((err)=>{this.submitLoading = false;});
+        });
+      },
+      onConfirmSubmit(data) {
+        const isEdit = (this.type === 'edit');
+        if (!data) {
+          wx.showToast({title: `${ isEdit? '编辑':'新建'}成功！`, icon: 'success', duration: 1000})
+          setTimeout(() => {
+            wx.navigateBack({
+              delta: isEdit?2:1,
+              success: function(res) {
+                 eventHub.$emit('refreshCustomerListPage')
+              }
+            })
+          }, 1000)
+        } else {
+          // 数据重复强制更新
+          wx.showModal({
+            title: '提示',
+            content: '客户已存在，点击确定后会更新客户资料，请确认是否更新',
+            success: (res) => {
+              if (res.confirm) {
+                this.isForce = true;
+                this.onSubmit();
+              } else if (res.cancel) {
+                // 取消不做处理
+                //wx.navigateBack({delta: isEdit?2:1})
+              }
+            }
+          })
+        }
+      },
+      onCancel() {
+        wx.navigateBack();
+      },
+      initData() {
+        this.type = this.$wx.options.type;
+        if (this.type === 'edit') {
+          this.pageTitle = '编辑客户';
+        } else {
+          this.pageTitle = '新建客户';
+        }
+        if (this.type === 'edit') {
+          let dynamicPropertiesList = Object.keys(this.customerInfo.dynamicProperties||{}).map(key => {
+              return {
+                key, 
+                value: this.customerInfo.dynamicProperties[key]
+              } 
+            }
+          )
+          this.formData = {
+            phone: this.customerInfo.phone,
+            tag: this.customerInfo.customerTags,
+            // deptId: this.customerInfo.deptId,
+            principalId: this.customerInfo.principalId,
+            principalName: this.customerInfo.principalName,
+            // systemTag: this.customerInfo.systemTag,
+            dynamicPropertiesList,
+            customerName: this.customerInfo.customerName,
+            customerEmail: this.customerInfo.customerEmail,
+            customerAddress: this.customerInfo.customerAddress,
+            customerWechat: this.customerInfo.customerWechat
+          };
+
+          // 系统标签初始化
+          // const newSystemTag = this.systemTagSelect.map(item => {
+          //   return {...item, checked: (this.customerInfo.systemTag||[]).indexOf(item.value) >= 0}
+          // })
+          // this.systemTagSelect = newSystemTag;
+        }
+      }
+    },
+    ready () {
+      this.initData();
+      // this.fetchDeptList();
+      let deptId = undefined;
+      if (this.type === 'edit' && this.customerInfo.hasOwnProperty('deptId')) {
+        deptId = this.customerInfo.deptId;
+      }
+      this.fetchcaList(deptId);
+      this.fetchDynamicProp(); 
+      this.fetchTagList();
+    }
+  });
+</script>
+<config>
+{
+  navigationStyle: 'custom',
+  usingComponents: {
+    pickerSelect: "../../../components/select/pickerSelect",
+    tagSelect: "../../../components/select/tagSelect",
+    "mp-form": "module:weui-miniprogram/miniprogram_dist/form/form",
+    "mp-cells": "module:weui-miniprogram/miniprogram_dist/cells/cells",
+    "mp-cell": "module:weui-miniprogram/miniprogram_dist/cell/cell",
+    "mp-slideview": "module:weui-miniprogram/miniprogram_dist/slideview/slideview",
+    "mp-toptips": "module:weui-miniprogram/miniprogram_dist/toptips/toptips",
+    "mp-half-screen-dialog": "module:weui-miniprogram/miniprogram_dist/half-screen-dialog/half-screen-dialog",
+    "mp-icon": "module:weui-miniprogram/miniprogram_dist/icon/icon",
+    "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+  }
+}
+</config>
+

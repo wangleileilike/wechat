@@ -1,0 +1,280 @@
+<template>
+  <div class="card">
+    <div class="card-status">
+      <div
+        class="card-point {{ getCallSuccess ? 'card-point-success':''}}"
+      ></div>
+      <div class="card-time">{{ getFormatTime }}</div>
+      <div class="card-label-div">
+        <span v-if="getCallSuccess" class="card-label card-label-success">
+          {{ '拨打' + record.feedBack + '-' + record.callDuration + 's' }}
+        </span>
+        <span v-else class="card-label">
+          {{ record.feedBack }}
+        </span>
+      </div>
+    </div>
+    <div class="card-field">
+      <div>任务名称:</div>
+      <div>{{ record.taskName }}</div>
+    </div>
+    <div class="card-field">
+      <div>话术模板:</div>
+      <div>{{ record.templateName }}</div>
+    </div>
+    <div class="card-info" @tap="onHandleShowDetail">
+      <span>查看通话记录</span>
+      <image class="img-back" src="../../../assist/customer/detail.png" />
+    </div>
+  </div>
+</template>
+
+<style lang="less" scoped>
+  .card {
+    background: #ffffff;
+    // box-shadow: 0 2px 64px 0 rgba(0, 19, 48, 0.1);
+    // border-radius: 16px;
+  }
+
+  .card-status {
+    display: flex;
+    margin-top: 32rpx;
+    height: 45rpx;
+    align-items: center;
+  }
+
+  .card-point {
+    height: 24rpx;
+    width: 16rpx;
+    background: #ff5b52;
+    border-radius: 0 8rpx 8rpx 0;
+  }
+
+  .card-point-success {
+    background: #48d271;
+  }
+
+  .card-time {
+    font-family: PingFangSC-Medium;
+    font-size: 32rpx;
+    color: rgba(0, 0, 0, 0.85);
+    margin-left: 32rpx;
+  }
+
+  .card-label-div {
+    flex: 1;
+    height: 45rpx;
+    line-height: 45rpx;
+    text-align: right;
+
+    .card-label {
+      background: rgba(255, 91, 82, 0.06);
+      border: 1rpx solid #ff5b52;
+      border-radius: 8rpx;
+      height: 34rpx;
+      padding: 4rpx 12rpx;
+      font-family: PingFangSC-Medium;
+      font-size: 20rpx;
+      color: #ff5b52;
+    }
+
+      .card-label-success {
+        font-family: PingFangSC-Medium;
+        font-size: 20rpx;
+        color: #48d271;
+        text-align: center;
+        background: rgba(72, 210, 113, 0.06);
+        border: 1rpx solid #48d271;
+        border-radius: 8rpx;
+      }
+  }
+  
+
+  .card-field {
+    margin: 24rpx 0rpx 0rpx 48rpx;
+    display: flex;
+    justify-content: space-between;
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+
+    :nth-child(1) {
+      color: rgba(0, 0, 0, 0.45);
+      width: 200rpx;
+    }
+
+    :nth-child(2) {
+      flex: 1;
+      color: rgba(0, 0, 0, 0.65);
+      text-align: right;
+      white-space: nowrap;
+      overflow: hidden;
+      text-overflow: ellipsis;
+    }
+  }
+
+  .card-info {
+    margin: 24rpx 0rpx 48rpx 48rpx;
+    line-height: 46rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.65);
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+  }
+
+  .img-back {
+    float: right;
+    transform: scaleX(-1);
+    width: 24rpx;
+    height: 24rpx;
+    line-height: 46rpx;
+  }
+
+  .call-item {
+    padding: 43rpx 40rpx 0;
+    min-height: 200rpx;
+    box-sizing: border-box;
+    display: flex;
+    flex-wrap: wrap;
+    justify-content: space-between;
+  }
+  .call-result {
+    height: 0rpx;
+    transition: all 0.3s ease-in-out;
+    position: absolute;
+    width: 750rpx;
+    overflow: hidden;
+    background: #ffffff;
+    box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+    font-family: PingFangSC-Regular;
+    font-size: 24rpx;
+    margin-top: 96rpx;
+    z-index: 99;
+  }
+  .call-unselect {
+    background: rgba(24, 118, 255, 0.06);
+    border-radius: 12rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    width: 155rpx;
+    height: 56rpx;
+    font-family: PingFangSC-Regular;
+    color: rgba(0, 0, 0, 0.65);
+    margin-bottom: 16rpx;
+  }
+
+  .call-select {
+    background: rgba(24, 118, 255, 0.12);
+    border: 1rpx solid #1876ff;
+    border-radius: 12rpx;
+    color: #1876ff;
+  }
+
+  .search-on {
+    font-family: PingFangSC-Medium;
+    font-size: 28rpx;
+    color: #1876ff;
+  }
+
+  .call-button {
+    display: flex;
+    justify-content: space-between;
+    :nth-child(1) {
+      width: 323rpx;
+      height: 88rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 16rpx;
+      font-family: PingFangSC-Regular;
+      font-size: 30rpx;
+      letter-spacing: 0;
+      margin-left: 40rpx;
+      border: 1rpx solid #d1d8e1;
+    }
+    :nth-child(2) {
+      width: 323rpx;
+      height: 88rpx;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+      border-radius: 16rpx;
+      font-family: PingFangSC-Regular;
+      font-size: 30rpx;
+      letter-spacing: 0;
+      margin-right: 40rpx;
+      background: #1876ff;
+
+      color: #ffffff;
+    }
+  }
+
+  .button-on {
+    font-family: PingFangSC-Medium;
+    font-size: 28rpx;
+    color: #1876ff;
+  }
+
+  .intention-unselect {
+    height: 112rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.85);
+    letter-spacing: 0;
+    line-height: 112rpx;
+    border-top: 1rpx solid rgba(24, 118, 255, 0.08);
+  }
+
+  .intention-item {
+    padding: 0 40rpx;
+  }
+
+  .intention-select {
+    width: 40rpx;
+    height: 40rpx;
+    margin-left: 520rpx;
+    vertical-align: middle;
+  }
+
+  .wrap {
+    height: 100%;
+    overflow: hidden;
+    width: 750rpx;
+    z-index: 98;
+    position: absolute;
+  }
+</style>
+
+<script>
+  import wepy from '@wepy/core'
+  import { formatTime } from '../../../utils/format';
+
+  wepy.component({
+    options: {
+      multipleSlots: true // 在组件定义时的选项中启用多slot支持
+    },
+    computed: {
+      getCallSuccess() {
+        return (this.record.feedBack || '').indexOf('成功') >= 0;
+      },
+      getFormatTime() {
+        return formatTime(this.record.callTime, 'yyyy-MM-dd hh:mm');
+      }
+    },
+    methods: {
+      onHandleShowDetail(e) {
+        //var index = e.currentTarget.dataset.index;
+        // console.log(this)
+        this.$emit('showDetail', this.record)
+      }
+    },
+    props: {
+      record: {
+        type: Object,
+        default: {}
+      }
+    }
+  });
+</script>

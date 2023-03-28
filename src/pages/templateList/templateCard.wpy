@@ -1,0 +1,154 @@
+<style lang="less">
+    .template-card {
+        background: #FFFFFF;
+        padding: 32rpx 32rpx 24rpx 32rpx;
+        margin: 32rpx 32rpx;
+        box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+        border-radius: 16rpx;
+        box-sizing: border-box;
+        height: 224rpx;
+        display: flex;
+        flex-direction: column;
+        justify-content: space-between;
+        .info-top {
+            margin-bottom: 29rpx;
+        }
+        .titleContent {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14rpx;
+            .title {
+                font-size: 32rpx;
+                font-family: PingFangSC-Medium, PingFang SC;
+                font-weight: 500;
+                color: rgba(0, 0, 0, 0.85);
+                line-height: 45rpx;
+            }
+            .auditStatus {
+                width: 98rpx;
+                height: 40rpx;
+                background: linear-gradient(135deg, #E9E9E9 0%, #D3D3D3 100%);
+                border-radius: 16rpx 16rpx 16rpx 0rpx;
+                font-size: 22rpx;
+                color: #FFFFFF;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .noPass {
+              background: linear-gradient(135deg, #FFAFAF 0%, #FF5B52 100%);
+            }
+
+            .Editing {
+              background: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+              box-shadow: 0rpx 24rpx 32rpx -24rpx rgba(24, 118, 255, 0.5);
+            }
+
+            .Audit {
+              background: linear-gradient(135deg, #5CF3CB 0%, #16CC9C 100%);
+            }
+        }
+        .voice {
+            font-size: 28rpx;
+            font-family: PingFangSC-Medium, PingFang SC;
+            line-height: 40rpx;
+            .voiceTitle {
+                font-weight: 400;
+                color: rgba(0, 0, 0, 0.65);
+            }
+            .voiceProgress {
+                font-weight: 500;
+                color: #1876FF;
+            }
+        }
+        .info-bottom {
+            height: 104rpx;
+            border-top: 1px dashed rgba(24, 118, 255, 0.16);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            .bottom-title {
+                font-size: 28rpx;
+                font-family: PingFangSC-Regular, PingFang SC;
+                font-weight: 400;
+                color: rgba(0, 0, 0, 0.85);
+                line-height: 40rpx;
+            }
+            .detail-btn {
+                width: 24rpx;
+                height: 24rpx;
+                transform: scaleX(-1);
+            }
+        }
+    }
+</style>
+
+<template>
+    <view class="template-card" @click="jumpToDetail">
+       <div class="info-top">
+           <div class="titleContent">
+               <span class="title">{{templateInfo.name}}</span>
+               <span class="auditStatus {{templateInfo.auditStatus}}">{{enums.TEMPLATE_STATUES[templateInfo.auditStatus] || '已通过'}}</span>
+           </div>
+           <!-- <div class="voice">
+               <span class="voiceTitle">录音完整度：</span>
+               <span class="voiceProgress">100%</span>
+           </div> -->
+       </div>
+       <div class="info-bottom">
+           <babel class="bottom-title">话术录音</babel>
+           <img class="detail-btn" src="../../assist/customer/detail.png"/>
+       </div>
+    </view>
+</template>
+
+<script>
+    import wepy from '@wepy/core'
+    import eventHub from '../../common/eventHub';
+    import { mapState } from '@wepy/x';
+    import store from '../../store';
+    import WXAPI, { getStorage } from '../../wxapi/main';
+    import enums from '../../utils/enums';
+
+    wepy.component({
+        store,
+        data: {
+           enums,
+           voiceProgress: 0
+        },
+
+        methods: {
+           jumpToDetail() {
+               this.$emit('jumpToDetail', this.templateInfo)
+           },
+            //获取已录音的totalCount
+           fetchRecordVoiceList() {
+             const _this = this;
+              this.$store.dispatch({
+                   type: 'template/fetchVoiceList',
+                   payload: { templateId: this.templateId, voiceSetId: this.voiceSetId, voiceStatus: 'Record', pageNum: 1, pageSize: 9999 },
+                   cb: data => {
+                      let currentVoice = find(data.list, { id: _this.activeRecord.id, voiceId: _this.activeRecord.voiceId, txt: _this.activeRecord.txt });
+                      currentVoice.indexNumber = _this.activeRecord.indexNumber;
+                      console.log('currentVoice===>', currentVoice)
+                      _this.activeRecord = currentVoice;
+                      console.log('_this.activeRecord==>', _this.activeRecord)
+                      _this.saveVoiceDetail(_this.activeRecord);
+                   }
+              })
+           },
+
+        },
+        props: {
+            templateInfo: {
+                type: Object,
+                default: {}
+            }
+        },
+  });
+
+</script>
+
+
+

@@ -1,0 +1,91 @@
+<style lang="less" scoped>
+.callbox-item {
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-evenly;
+    height: 163rpx;
+    background-image: linear-gradient(0deg, #FAFCFF 0%, #EDF4FF 100%);
+    border-radius: 12rpx;
+    padding: 20rpx;
+    margin-right: 32rpx;
+
+    .name {
+        font-size: 26rpx;
+        color: rgba(0,0,0,0.85);
+        letter-spacing: 0;
+        line-height: 30rpx;
+        font-weight: 600;
+        word-wrap: break-word;
+    }
+
+    .state {
+        font-size: 22rpx;
+        color: rgba(0,0,0,0.25);
+        font-weight: 400;
+        white-space: nowrap;
+    }
+}
+</style>
+<template>
+    <view class="callbox-item" bind:tap="jumpToDetail">
+        <text class="name">{{callbox.telId}}</text>
+        <label class="state">
+            有效状态：<span style="color: {{states[callbox.state][1]}}">{{states[callbox.state][0]}}</span>
+        </label>
+        <label class="state">
+            运行状态：<span style="color: {{runStates[runState][1]}}">{{runStates[runState][0]}}</span>
+        </label>
+    </view>
+</template>
+<script>
+import wepy from '@wepy/core';
+
+
+wepy.component({
+    props: {
+        callbox: { type: Object, required: true }
+    },
+    data: {
+        states: {
+            valid: ['使用中', '#48d271'],
+            overdue: ['即将到期', '#ff5b52'],
+            expired: ['已到期', '#656464'],
+            renew: ['到期延期中', '#1876ff'],
+            reserved: ['已预定', '#6c56ee'],
+        },
+        // 运行状态
+        runStates: {
+            registered: ['正常', '#48d271'],
+            unRegistered: ['注册异常', '#EF7300']
+        }
+    },
+    computed: {
+        runState() {
+            const state = this.callbox && this.callbox.state;
+            // 电话机为 使用中 和 即将到期 根据返回runState展示，其他状态，全部显示为注册异常
+            if (['valid', 'overdue'].indexOf(state) >= 0) {
+                return this.callbox && this.callbox.runState || 'unRegistered'
+            } else {
+                return 'unRegistered'
+            }
+        }
+    },
+    methods: {
+        jumpToDetail() {
+            // wx.navigateTo({
+            //     url: `/pages/callbox/index`
+            // });
+            this.$emit('jump', {...this.callbox});
+        },
+        getState() {
+            // 电话机为 使用中 和 即将到期 根据返回runState展示，其他状态，全部显示为注册异常
+            if (['valid', 'overdue'].indexOf(this.callbox.state) >= 0) {
+                return this.callbox.state || 'unRegistered'
+            } else {
+                return 'unRegistered'
+            }
+        }
+    }
+})
+</script>

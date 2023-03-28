@@ -1,0 +1,149 @@
+<template>
+  <div class="card">
+    <img class="radio-btn" v-show="value" src="../../assist/customer/radio-selected.png" @tap="onClick"/>
+    <img class="radio-btn" v-show="!value" src="../../assist/customer/radio-no-selected.png" @tap="onClick"/>
+    <div class="detail-div">
+        <div class="phone" @tap="onClickDetail">
+          <span>{{isDesensPhone}}</span>
+          <img class="detail-btn" src="../../assist/customer/detail.png"/>
+        </div>
+        <div class="field-name-div">
+          <span class="field-name">用户姓名:</span>
+          <span class="field-value">{{customer.dynamicProperties && customer.dynamicProperties.name || customer.customerName || '-'}}</span>
+        </div>
+        <div class="field-calltime-div">
+          <span class="field-name">最近呼出时间:</span>
+          <span class="field-value">{{formatTimeStr || '-'}}</span>
+        </div>
+        <div class="field-name-div">
+          <div class="tag-div" v-if="customer.lastCalloutFeedBack">{{customer.lastCalloutFeedBack}}</div>
+          <div class="tag-div" v-if="customer.lastCalloutDuration">{{customer.lastCalloutDuration+'s'}}</div>
+          <div class="tag-div" v-if="customer.lastTemplateName">{{customer.lastTemplateName}}</div>
+          <div class="tag-div" v-if="customer.lastCalloutIntent">{{customer.lastCalloutIntent}}</div>
+        </div>
+    </div>
+    
+  </div>
+</template>
+
+<style lang="less" scoped>
+  .card {
+    display: flex;
+    align-items: flex-start;
+    background: #FFFFFF;
+    padding: 32rpx 32rpx 24rpx 32rpx;
+    margin: 32rpx 32rpx;
+    box-shadow: 0 2rpx 64rpx 0 rgba(0,19,48,0.10);
+    border-radius: 16rpx;
+  }
+
+  .detail-div {
+    flex: 1;
+    margin-left: 26rpx;
+
+    .phone {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-family: PingFangSC-Medium;
+      font-size: 36rpx;
+      color: rgba(0,0,0,0.85);
+      line-height: 40rpx;
+    }
+
+    .field-name-div {
+      margin: 10rpx 0rpx 16rpx 0rpx;
+    }
+
+    .field-calltime-div {
+      margin-bottom: 16rpx;
+    }
+
+    .field-name {
+      font-family: PingFangSC-Regular;
+      font-size: 28rpx;
+      color: rgba(0,0,0,0.45);
+      margin-right: 16rpx;
+    }
+
+    .field-value {
+      font-family: PingFangSC-Regular;
+      font-size: 28rpx;
+      color: rgba(0,0,0,0.85);
+      word-break: break-all;
+    }
+   
+    .tag-div {
+      width: auto;
+      display: inline-block;
+      line-height: 48rpx;
+      font-family: PingFangSC-Regular;
+      font-size: 24rpx;
+      height: 48rpx;
+      padding: 0rpx 16rpx;
+      margin-right: 16rpx;
+      margin-bottom: 16rpx;
+      color: rgba(0,0,0,0.65);
+      background: rgba(24,118,255,0.06);
+      border-radius: 16rpx 16rpx 16rpx 0;
+    }
+  }
+
+  .radio-btn {
+    width: 40rpx;
+    height: 40rpx;
+  }
+
+  .detail-btn {
+    width: 24rpx;
+    height: 24rpx;
+    transform: scaleX(-1);
+  }
+</style>
+
+<script>
+  import wepy from '@wepy/core'
+  import { formatTime } from '../../utils/format';
+  import { getStorage } from '../../wxapi/main';
+  import { numberDesensitization, hasAuthority } from '../../utils/utils';
+
+  wepy.component({
+    data: {
+      // radioChecked: false,
+    },
+    computed: {
+      formatTimeStr() {
+        return formatTime(this.customer.lastCalloutTime, 'yyyy-MM-dd hh:mm:ss');
+      },
+      isDesensPhone() {
+        const account = getStorage('account');
+        const inDesens = !hasAuthority('ROLE_phone_pools:not_view_number')(account && account.authorities)
+        return this.customer.phone && inDesens ? numberDesensitization(this.customer.phone) : this.customer.phone;
+      }
+    },
+    methods: {
+      onClick(e, checked) {
+        this.value = !this.value;
+        this.$emit('change', {id: this.customer.id, value: this.value})
+      },
+      onClickDetail() {
+        this.$emit('showDetail', this.customer);
+      }
+    },
+    props: {
+      customer: {
+        type: Object,
+        default: {}
+      },
+      value: {
+        type: Boolean,
+        default: false      
+      },
+      allSelected: {
+        type: Object,
+        default: {}
+      }
+    }
+  });
+</script>
+

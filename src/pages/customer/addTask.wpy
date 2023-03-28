@@ -1,0 +1,1455 @@
+<template>
+  <div v-show="show" class="card">
+    <taskHalfScreenDialog
+      title="创建任务"
+      :show="getDialogName === 'addtask'"
+      @close="onCloseTaskDialog"
+    >
+      <div slot="desc" class="create-div" catchtouchmove="preventTouchMove">
+        <mp-cells v-model="taskForm">
+          <mp-cell prop="phone">
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">手机号码:</span>
+            <span class="phone-name">{{ phoneName }}</span>
+            <!-- <input
+              :style="{ width: '450rpx' }"
+              slot="footer"
+              v-model="taskName"
+              placeholder="请输入"
+            /> -->
+          </mp-cell>
+          <mp-cell v-if="showDept">
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">部门:</span>
+            <div
+              slot="footer"
+              class="picker-div"
+              @tap="onClickAfterStep('selectDept')"
+            >
+              <span v-if="departmentName">{{ departmentName }}</span>
+              <span v-else class="placehoder-span">请选择</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell>
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">话术模板:</span>
+            <div slot="footer" class="picker-div" @tap="tapTemplate">
+              <span v-if="templateName" class="template-name">{{
+                templateName
+              }}</span>
+              <span v-else class="placehoder-span">请选择</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell>
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">推送设置:</span>
+            <switch slot="footer" color="#1876FF" bindchange="switch1Change" />
+          </mp-cell>
+          <mp-cell v-if="taskForm.intentPushEnable">
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">推送意向:</span>
+            <div slot="footer" class="picker-div" @tap="touchIntentions">
+              <span v-if="intention">{{ intention }}</span>
+              <span v-else class="placehoder-span">请选择</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell>
+            <span slot="icon" class="required-hide">*</span>
+            <div slot="title" class="rule-title">
+              <div>拨打规则:</div>
+              <div v-show="ruleName">{{ ruleShow }}</div>
+            </div>
+            <div slot="footer" class="picker-div" @tap="touchRule">
+              <span v-if="ruleName">{{ ruleName }}</span>
+              <span v-else class="placehoder-span">请选择</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell v-if="showRobotSelect">
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">机器人类型:</span>
+            <div
+              slot="footer"
+              class="picker-div"
+              @tap="onClickAfterStep('selectRobotName')"
+            >
+              <span v-if="taskForm.robotType">{{
+                taskForm.robotType == robotType[0].key ? '套餐' : '普通'
+              }}</span>
+              <span v-else class="placehoder-span">请选择</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell>
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">主叫号码:</span>
+            <div
+              slot="footer"
+              class="picker-div"
+              @tap="touchCaller"
+            >
+              <span v-if="selectedCaller">{{selectedCaller.name}}</span>
+              <span v-else class="placehoder-span">请选择</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell>
+            <span slot="icon" class="required-hide">*</span>
+            <div class="robot-title" slot="title">
+              <div>机器人路数:</div>
+              <div>最大可用路数:{{ canUseRobotNum }}</div>
+            </div>
+            <input
+              type="number"
+              slot="footer"
+              :value="robotNums"
+              bindinput="robotNumInput"
+              placeholder="请输入"
+            />
+          </mp-cell>
+        </mp-cells>
+        <div class="submit-div">
+          <button class="cancel-btn" @tap="onCloseTaskDialog">取消</button>
+          <button class="submit-btn" type="primary" @tap="onSubmitTask">
+            确定
+          </button>
+        </div>
+      </div>
+    </taskHalfScreenDialog>
+    <taskHalfScreenDialog
+      title="选择推送意向"
+      :show="getDialogName === 'selectIntention'"
+      @close="onClickBeforeStep"
+    >
+      <div slot="desc">
+        <scroll-view
+          catchtouchmove="preventTouchMove"
+          scroll-y
+          class="intention-item choose-rule"
+        >
+          <div
+            v-for="(intention, idx) in intentions"
+            @tap="chooseIntention(idx)"
+            class="intention-unselect"
+          >
+            {{ intention.key }}
+            <image
+              v-show="intention.value"
+              class="intention-select"
+              src="../../asset/task/selected.png"
+            />
+          </div>
+        </scroll-view>
+      </div>
+    </taskHalfScreenDialog>
+    <taskHalfScreenDialog
+      title="选择话术模板"
+      :show="getDialogName === 'selectTemplate'"
+      @close="closeTemplate"
+    >
+      <div slot="desc">
+        <scroll-view
+          catchtouchmove="preventTouchMove"
+          scroll-y
+          class="intention-item choose-rule"
+        >
+          <div
+            v-for="(template, idx) in templates"
+            @tap="chooseTemplate(idx)"
+            class="intention-unselect"
+          >
+            {{ template.name }}
+            <image
+              v-show="template.id == taskForm.template"
+              class="intention-select"
+              src="../../asset/task/selected.png"
+            />
+          </div>
+        </scroll-view>
+      </div>
+    </taskHalfScreenDialog>
+
+    <taskHalfScreenDialog
+      title="选择机器人类型"
+      :show="getDialogName === 'selectRobotName'"
+      @close="onClickBeforeStep"
+    >
+      <div slot="desc">
+        <scroll-view
+          catchtouchmove="preventTouchMove"
+          scroll-y
+          class="intention-item choose-rule"
+        >
+          <div
+            v-for="(type, idx) in robotType"
+            @tap="chooseRobotType(type.key)"
+            class="intention-unselect"
+          >
+            {{ type.name }}
+            <image
+              v-show="type.key == taskForm.robotType"
+              class="intention-select"
+              src="../../asset/task/selected.png"
+            />
+          </div>
+        </scroll-view>
+      </div>
+    </taskHalfScreenDialog>
+
+    <taskHalfScreenDialog
+      title="选择部门"
+      :show="getDialogName === 'selectDept'"
+      @close="closeDepartment"
+    >
+      <div slot="desc">
+        <div class="intention-item">
+          <div
+            v-for="(dept, idx) in depts"
+            @tap="chooseDept(idx)"
+            class="intention-unselect"
+          >
+            {{ dept.name }}
+            <image
+              v-show="dept.id == taskForm.departmentId"
+              class="intention-select"
+              src="../../asset/task/selected.png"
+            />
+          </div>
+        </div>
+      </div>
+    </taskHalfScreenDialog>
+    <taskHalfScreenDialog
+      title="选择拨打规则"
+      :show="getDialogName === 'selectCallRule'"
+      @close="onClickBeforeStep"
+    >
+      <div slot="desc" class="rule">
+        <scroll-view
+          catchtouchmove="preventTouchMove"
+          scroll-y
+          class="intention-item choose-rule"
+        >
+          <div
+            v-for="(rule, idx) in rules"
+            @tap="chooseRule(idx, rule)"
+            class="intention-unselect"
+          >
+            {{ rule.name }}
+            <image
+              v-show="rule.id == taskForm.rule"
+              class="intention-select"
+              src="../../asset/task/selected.png"
+            />
+          </div>
+        </scroll-view>
+
+        <div class="create-btn" v-if="showAddRule" type="default" @tap="createRuleModal">
+          创建新规则
+        </div>
+      </div>
+    </taskHalfScreenDialog>
+    <taskHalfScreenDialog
+      title="选择主叫号码"
+      :show="getDialogName === 'selectCaller'"
+      @close="onClickBeforeStep"
+    >
+      <div slot="desc" class="rule">
+        <scroll-view
+          catchtouchmove="preventTouchMove"
+          scroll-y
+          class="intention-item choose-rule"
+        >
+          <div
+            v-for="caller in callers"
+            :key="caller.id"
+            @tap="chooseCaller(caller)"
+            class="intention-unselect"
+          >
+            {{caller.name}}({{caller.telnum}})
+            <image
+              v-show="caller.id == taskForm.callerId"
+              class="intention-select"
+              src="../../asset/task/selected.png"
+            />
+          </div>
+        </scroll-view>
+      </div>
+    </taskHalfScreenDialog>
+    <taskHalfScreenDialog
+      title="创建拨打规则"
+      :show="getDialogName === 'createRule'"
+      @close="onClickBeforeStep"
+    >
+      <div slot="desc" class="prevent-class" catchtouchmove="preventTouchMove">
+        <mp-cells v-model="ruleForm">
+          <mp-cell prop="phone">
+            <span slot="title">规则名称:</span>
+            <input slot="footer" v-model="ruleForm.name" placeholder="请输入" />
+          </mp-cell>
+          <mp-cell>
+            <span slot="title">拨打时间:</span>
+            <div class="time-picker">
+              <picker
+                mode="time"
+                value="{{startTime}}"
+                start="{{standrdStart}}"
+                end="{{endTime}}"
+                v-if= "showPicker"
+                bindchange="bindStarttimeChange"
+              >
+                <view class="picker">
+                  {{ startTime }}
+                </view>
+              </picker>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+              <span class="zhi">至</span
+              ><picker
+                mode="time"
+                value="{{endTime}}"
+                 start="{{startTime}}"
+                end="{{standrdEnd}}"
+                v-if= "showPicker"
+                bindchange="bindEndtimeChange"
+              >
+                <view class="picker">
+                  {{ endTime }}
+                </view>
+              </picker>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <mp-cell>
+            <span slot="title">重拨次数:</span>
+            <input
+              slot="footer"
+              type="number"
+              bindinput="redialTimesInput"
+              :value="redialTimes"
+              placeholder="请输入"
+            />
+          </mp-cell>
+          <mp-cell>
+            <span slot="title">重拨间隔时间:</span>
+            <span class="fen-fa" slot="footer">
+              <input
+                v-model="ruleForm.redialPeriodMin"
+                type="number"
+                placeholder="请输入"
+              />
+              <span class="fen">分</span>
+            </span>
+          </mp-cell>
+          <mp-cell>
+            <span slot="icon" class="required-hide">*</span>
+            <span slot="title">重拨范围:</span>
+            <div
+              slot="footer"
+              class="picker-div"
+              @tap="onClickAfterStep('selectRedialReason')"
+            >
+              <span class="placehoder-span">选择范围</span>
+              <img
+                class="picker-img"
+                src="../../assist/customer/drop-down.png"
+              />
+            </div>
+          </mp-cell>
+          <scroll-view scroll-y class="call" catchtouchmove="preventTouchMove">
+            <div class="call-item">
+              <div
+                v-for="(redialReason, idx) in redialReasonsShow"
+                v-show="redialReason"
+                class="call-unselect call-select"
+              >
+                {{ redialReason }}
+              </div>
+            </div>
+          </scroll-view>
+        </mp-cells>
+        <div class="submit-div" catchtouchmove="preventTouchMove">
+          <button class="cancel-btn" @tap="onClickBeforeStep">上一步</button>
+          <button class="submit-btn" type="primary" @tap="onSubmitRule">
+            确定
+          </button>
+        </div>
+      </div>
+    </taskHalfScreenDialog>
+    <taskHalfScreenDialog
+      title="选择重拨范围"
+      :show="getDialogName === 'selectRedialReason'"
+      @close="onClickBeforeStep"
+    >
+      <div slot="desc">
+        <scroll-view
+          catchtouchmove="preventTouchMove"
+          class="choose-rule"
+          scroll-y
+        >
+          <div class="intention-item">
+            <div
+              v-for="(redialReason, idx) in redialReasons"
+              @tap="chooseRedialReason(idx)"
+              class="intention-unselect"
+            >
+              {{ redialReason.key }}
+              <image
+                v-show="redialReason.value"
+                class="intention-select"
+                src="../../asset/task/selected.png"
+              />
+            </div>
+          </div>
+        </scroll-view>
+      </div>
+    </taskHalfScreenDialog>
+  </div>
+  <div v-show="dialogShow" class="wrap"></div>
+
+  <mp-dialog
+    ext-class="mp-dialog"
+    title="警告"
+    show="{{dialogShow}}"
+    bindbuttontap="tapDialogButton"
+    buttons="{{dialogbutton}}"
+    mask-closable="{{false}}"
+    mask="{{false}}"
+  >
+    <view>{{ warnings }}</view>
+  </mp-dialog>
+</template>
+
+<style lang="less" >
+@import 'addTask.less';
+.template-name {
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  max-width: 450rpx;
+  display: inline-block;
+}
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import * as taskApi from '@/wxapi/taskApi';
+import wxApi, { setStorage, getStorage } from '@/wxapi/main';
+import moment from 'moment';
+import qs from 'qs';
+import { isSuccess } from '../../services/api';
+import { hasAuthority } from '@/utils/utils';
+
+const robotNumberCache = {};
+
+wepy.component({
+  data: {
+    robotType: [
+      { key: 'package', name: '套餐' },
+      { key: 'normal', name: '普通' },
+    ],
+    packageRobotList: [],
+    commonRobotList: [],
+    parentUserId: 0,
+    wxtarget: {},
+    userInfo: {},
+    bindInfo: {},
+    account: {},
+    warnings: '',
+    dialogShow: false,
+    dialogbutton: [{ text: '确定' }],
+    createStepIndex: 1,
+    dialogName: [], // 当前弹窗名称队列（当前页面总共只会出现一个弹框）
+    showCreateTemplate: false,
+    showIntentionDialog: false,
+    taskForm: {
+      intentPushEnable: false,
+      rule: '',
+    },
+    ruleForm: {
+      redialTimes: 0,
+      redialPeriodMin: 120,
+    },
+    intentions: [],
+    rules: [],
+    templates: [],
+    depts: [],
+    callers: [],
+    redialReasons: [
+      { key: '停机', value: false },
+      { key: '无法接通', value: true },
+      { key: '关机', value: false },
+      { key: '不在服务区', value: true },
+      { key: '正在通话', value: true },
+      { key: '无法判断', value: false },
+      { key: '无人接听', value: true },
+      { key: '忙音', value: true },
+      { key: '空号', value: false },
+      { key: '语音信箱', value: true },
+      { key: '呼叫限制', value: true },
+      { key: '暂停服务', value: true },
+      { key: '外呼失败(超时)', value: false },
+      { key: '外呼失败(超出并发限制)', value: false },
+      { key: '外呼失败(号码错误)', value: false },
+      { key: '外呼失败(正在呼出)', value: false },
+      { key: '外呼失败(session超时)', value: false },
+      { key: '外呼失败(忙音)', value: false },
+      { key: '外呼失败(接通前语言识别异常)', value: false },
+      { key: '外呼失败(分类失败)', value: false },
+      { key: '外呼失败(未打开分类使能)', value: false },
+      { key: '外呼失败(线路异常)', value: false },
+      { key: '外呼失败(错误码)', value: false },
+    ],
+    inputRobotNum: 0,
+    personalData: { volume: 3, speed: 27, tone: 50 },
+    voicePacketArray: {
+      def: [],
+      system: [],
+    },
+    startTime: '00:00',
+    endTime: '23:59',
+    standrdStart: '09:00',
+    standrdEnd: '21:00',
+    showPicker: true,
+    selectedCaller: null, // 当前选中的主叫号码对象
+    callerIndexRobotNum: 0,
+  },
+  watch: {
+    show(val, oldVal) {
+      if (val && (val !== oldVal)) {
+        this.fetchCallers();
+      }
+    },
+    canUseRobotNum(newVal, oldVal) {
+      if (newVal === oldVal) return;
+      this.$nextTick(() => {
+        this.robotNums = newVal > 0 ? (this.robotNums > newVal ? 1
+          : (this.robotNums < 1 ? 1 : this.robotNums)) : 0;
+      })
+    }
+  },
+  computed: {
+    robotNums() {
+      //  return this.canUseRobotNum > 0 ? (this.inputRobotNum > this.canUseRobotNum ? 1
+      //     : (this.inputRobotNum < 1 ? 1 : this.inputRobotNum)) : 0;
+      const result = this.canUseRobotNum <= 0 ? 0 : (
+        this.inputRobotNum > this.canUseRobotNum ? 1 : this.inputRobotNum
+      );
+      return result;
+    },
+    canUseRobotNum() {
+      // 没有选中主叫号码返回0
+      return !this.selectedCaller ? 0 : (
+        // 主叫号码对应得最大并发 和 当前公司可用机器人 数量取 最小值
+        // Math.min(this.selectedCaller.callCapacity || 0, this.callerIndexRobotNum || 0)
+        this.callerIndexRobotNum || 0
+      );
+    },
+    showAddRule (){
+      return hasAuthority('ROLE_rule_manage:add')(this.account && this.account.authorities);
+    },
+    startTimeShow() {
+      const hasAuth = hasAuthority('Role_rule_manage:time_edit')(this.account && this.account.authorities);
+      return '00:00';
+    },
+    endTimeShow() {
+      return '23:59';
+    },
+    redialReasonsShow() {
+      return this.redialReasons.filter((a) => a.value).map((a) => a.key);
+    },
+    getDialogName() {
+      return this.dialogName[this.dialogName.length - 1] || '';
+    },
+    intention() {
+      const intentionsChoosed =(this.intentions || []).filter((a) => a.value);
+      const key = (intentionsChoosed[0] || {}).key
+      if(intentionsChoosed.length>1){
+        return `${key}等${intentionsChoosed.length}个意向`
+      }
+      return key;
+    },
+    ruleName() {
+      if (!this.taskForm.rule) {
+        return '';
+      }
+      return (
+        (this.rules || []).filter((a) => a.id == this.taskForm.rule)[0] || {}
+      ).name;
+    },
+    ruleShow() {
+      if (!this.taskForm.rule) {
+        return '';
+      }
+      const rule =
+        (this.rules || []).filter((a) => a.id == this.taskForm.rule)[0] || {};
+      let start = '2020-10-31 23:59:59';
+      let end = '2020-10-31 00:00:00';
+      let periodDesc = '无重拨';
+      const arrayRules = [];
+      (Object.keys(rule.rules || {}) || []).forEach((key) =>
+        arrayRules.push(rule.rules[key][0])
+      );
+      (arrayRules || []).forEach((a) => {
+        let startDate = `2020-10-31 ${a.startTime}:00`;
+        let endDate = `2020-10-31 ${a.endTime}:00`;
+
+        if (moment(startDate).diff(moment(start)) < 0) {
+          start = startDate;
+        }
+        if (moment(endDate).diff(moment(end)) > 0) {
+          end = endDate;
+        }
+      });
+      if (rule.redialTimes && rule.redialTimes > 0) {
+        periodDesc = rule.redialTimes + '次重拨';
+      }
+      return `${moment(start).format('HH:mm')}至${moment(end).format(
+        'HH:mm'
+      )} ${periodDesc}`;
+    },
+   
+    templateName() {
+      return (
+        (this.templates || []).filter(
+          (a) => a.id == this.taskForm.template
+        )[0] || {}
+      ).name;
+    },
+    departmentName() {
+      return (
+        (this.depts || []).filter(
+          (a) => a.id == this.taskForm.departmentId
+        )[0] || {}
+      ).name;
+    },
+    showDept() {
+      if (this.depts.length > 1) {
+        return true;
+      } else {
+        return false;
+      }
+    },
+    useRobot() {
+      if (this.showRobotSelect) {
+        if (!this.taskForm.robotType) {
+          return [];
+        }
+        if (this.taskForm.robotType == this.robotType[0].key) {
+          return this.packageRobotList;
+        } else {
+          return this.commonRobotList;
+        }
+      } else {
+        return this.packageRobotList.length > 0
+          ? this.packageRobotList
+          : this.commonRobotList;
+      }
+    },
+    showRobotSelect() {
+      return (
+        // this.packageRobotList.length > 0 && this.commonRobotList.length > 0
+        true
+      );
+    },
+    redialTimes() {
+      return this.ruleForm.redialTimes;
+    },
+  },
+  detached() {
+    // 清空机器人数量缓存缓存
+    Object.keys(robotNumberCache).forEach(k => robotNumberCache[k] = void 0);
+  },
+  created() {
+    this.userInfo = getStorage('userInfo');
+    this.account = getStorage('account');
+    this.bindInfo = getStorage('bindInfo');
+    this.parentUserId = this.account.parentUserId; // 等于0为直销
+    this.wxtarget = {
+      openId: this.bindInfo.openId,
+      id: this.account.id,
+      accountName: this.account.accountName,
+    };
+
+    this.depts = this.account.department || [];
+    this.dialogName.push('addtask');
+    this.fetchTemplateName();
+
+    this.isDeptmentAccount = this.depts && this.depts.length > 0;
+    if (this.isDeptmentAccount) {
+      this.taskForm = {...this.taskForm,departmentId : this.depts[0].id};
+      this.departmentId = this.depts[0].id;
+    }
+    this.fetchRules();
+    this.robotList();
+    this.getProps();
+    this.voicePacketQuery();
+  },
+
+  methods: {
+    robotList() {
+      const payload = {
+        // pageNum: 1,
+        // pageSize: 6,
+        departmentId: this.taskForm.departmentId || 0,
+        status: [2, 3]
+      };
+      if (this.taskForm.callerId) {
+        payload.callerIds = [this.taskForm.callerId];
+      }
+      wxApi.request(
+        `${taskApi.robotList}?${qs.stringify(payload, { arrayFormat: 'repeat' })}`,
+        'GET',
+        // qs.stringify(payload, { arrayFormat: 'repeat' }),
+        {},
+        {},
+        taskApi.baseUrl
+      ).then(res => {
+        if (this.isSuccess(res)) {
+          this.packageRobotList = res.data.list
+            .filter((a) => a.robotInfo)
+            .filter((a) => a.tradeType == this.robotType[0].key);
+          this.commonRobotList = res.data.list
+            .filter((a) => a.robotInfo)
+            .filter((a) => a.tradeType == this.robotType[1].key);
+        }
+      });
+      // const res = {
+      //   code: 0,
+      //   data: {
+      //     list: [
+      //       {
+      //         robotNo: '1',
+      //         tradeType: 'package',
+      //         robotInfo: '1',
+      //       },
+      //       {
+      //         robotNo: '2',
+      //         tradeType: 'package',
+      //         robotInfo: '1',
+      //       },
+      //       {
+      //         robotNo: '3',
+      //         tradeType: 'common',
+      //         robotInfo: '1',
+      //       },
+      //     ],
+      //   },
+      // };
+    },
+    fetchCallers() {
+      return wxApi.request(
+        `${taskApi.getCaller}?enable=true&searchAll=true`,
+        'GET',
+        {},
+        {},
+        taskApi.baseUrl
+      ).then(res => {
+        if (this.isSuccess(res)) {
+          this.callers = res.data || [];
+        }
+      });
+      // this.callers = [
+      //   {
+      //     name: '主叫号码1',
+      //     id: 'zhujiaohaoma1',
+      //   },
+      //   {
+      //     name: '主叫号码12',
+      //     id: 'zhujiaohaoma12',
+      //   }
+      // ];
+    },
+    redialTimesInput(e) {
+      // v-model="ruleForm.redialTimes"
+      this.ruleForm.redialTimes =
+        e.$wx.detail.value > 5 ? 5 : e.$wx.detail.value;
+      this.ruleForm = {
+        ...this.ruleForm,
+        redialTimes: this.ruleForm.redialTimes,
+      };
+    },
+    chooseRobotType(type) {
+      this.taskForm = { ...this.taskForm, robotType: type };
+      this.getRobotNum(this.taskForm.callerId);
+    },
+    async tapTemplate() {
+      await this.fetchTemplateName();
+      this.onClickAfterStep('selectTemplate');
+    },
+
+    async closeTemplate() {
+      // 改变模板的时候改变意向
+      this.intention = null;
+      if (this.taskForm.template) {
+        await this.fetchIntentions();
+      }
+      this.onClickBeforeStep();
+    },
+
+    async touchIntentions() {
+      if (this.taskForm.template) {
+        this.onClickAfterStep('selectIntention');
+      } else {
+        this.onDialog('请先选择模板');
+        return;
+      }
+    },
+    async touchRule() {
+      // 展示部门筛选则需要选，否则不用选或者自动选上唯一的部门
+      if (this.isDeptmentAccount && !this.taskForm.departmentId) {
+        this.onDialog('请先选择部门');
+        return;
+      }
+      await this.fetchRules();
+      this.onClickAfterStep('selectCallRule');
+    },
+    touchCaller() {
+      // 展示部门筛选则需要选，否则不用选或者自动选上唯一的部门
+      if (this.isDeptmentAccount && !this.taskForm.departmentId) {
+        this.onDialog('请先选择部门');
+        return;
+      }
+      this.onClickAfterStep('selectCaller');
+    },
+    robotNumInput(e) {
+      const val = +e.$wx.detail.value;
+      this.inputRobotNum = val;
+    },
+    isSuccess(rm) {
+      return rm && rm.code == 0;
+    },
+
+    getRobotNum(callerId) {
+      // if (robotNumberCache[callerId] !== void 0) {
+      //   this.callerIndexRobotNum = robotNumberCache[callerId];
+      //   return;
+      // }
+      return wxApi.request(
+        // `${taskApi.getRobotNum}?bindType=all&departmentId=${this.taskForm.departmentId || 0}`,
+        `${taskApi.getRobotNum}?callerIds=${callerId}&robotType=${this.taskForm.robotType}&departmentId=${this.taskForm.departmentId || 0}`,
+        'GET',
+        {},
+        {},
+        taskApi.baseUrl
+      ).then(res => {
+        if (this.isSuccess(res)) {
+          robotNumberCache[callerId] = res.data.availableNum;
+          this.callerIndexRobotNum = res.data.availableNum;
+        }
+      });
+    },
+    getProps() {
+      return wxApi.request(
+        taskApi.getProp,
+        'GET',
+        {},
+        {},
+        taskApi.baseUrl
+      ).then(res => {
+        // const res = { data: { volume: 3, speed: 27, tone: 50 }, code: 0 };
+        if (this.isSuccess(res)) {
+          if(res.data){
+          this.personalData = res.data;
+          }
+        }
+      });
+    },
+    voicePacketQuery() {
+      return wxApi.request(
+        taskApi.voicePacketQuery,
+        'GET',
+        {},
+        {},
+        taskApi.baseUrl
+      ).then(res => {
+        // const res = { data: [], code: 0 };
+        if (this.isSuccess(res)) {
+          this.voicePacketArray = {
+            def: res.data.filter((x) => x.type == 'def') || [],
+            system: res.data.filter((x) => x.type == 'system') || [],
+          };
+        }
+      });
+    },
+
+    async isNameExists() {
+      return await wxApi.request(
+        taskApi.isRuleExists,
+        'GET',
+        { name: this.ruleForm.name },
+        {},
+        taskApi.baseUrl
+      );
+      // return { data: false, code: 0 };
+    },
+    async isTaskNameExists() {
+      return await wxApi.request(
+        taskApi.isTaskExists,
+        'GET',
+        { name: this.taskForm.taskName },
+        {},
+        taskApi.baseUrl
+      );
+      // return { data: false, code: 0 };
+    },
+    async createRule() {
+      return await wxApi.request(
+        taskApi.createRule,
+        'POST',
+        {
+          ...this.ruleForm,
+          rules: this.ruleForm.rules.map((a) => JSON.stringify(a)),
+        },
+        {},
+        taskApi.baseUrl
+      );
+      // return { code: 0 };
+    },
+    async createTask() {
+      return await wxApi.request(
+        taskApi.createTask,
+        'POST',
+        this.taskForm,
+        { 'Content-Type': 'application/json' },
+        taskApi.baseUrl
+      );
+      // return { code: 1 };
+    },
+
+    async fetchDept() {
+      let res = await wxApi.request(
+        taskApi.listDept,
+        'GET',
+        { pageNum: 1, pageSize: 10 },
+        {},
+        taskApi.baseUrl
+      );
+      if (this.isSuccess(res)) {
+        this.dept = res.data.list;
+        //       this.depts = [
+        //   {
+        //     id: 42,
+        //     name: '12312',
+        //     desc: '123123',
+        //     companyId: 81000262,
+        //     companyName: '石世壮2',
+        //   },
+        //   {
+        //     id: 84,
+        //     name: '分配模板部门',
+        //     desc: null,
+        //     companyId: 81000262,
+        //     companyName: '石世壮2',
+        //   },
+        // ];
+      }
+    },
+    fetchRules() {
+      const payload = { pageSize: 999, pageNum: 1 };
+      if (this.isDeptmentAccount) {
+        payload.departmentId = this.taskForm.departmentId;
+      }else {
+        payload.departmentId = 0;
+      }
+      return wxApi.request(
+        taskApi.queryRuleNames,
+        'GET',
+        payload,
+        {},
+        taskApi.baseUrl
+      ).then(res => {
+        if (this.isSuccess(res)) {
+          this.rules = res.data.list || [];
+          //      this.rules = [
+          //   {
+          //     id: 3000148,
+          //     name: '有重拨规则',
+          //     desc: '22',
+          //     companyId: 81000006,
+          //     redialTimes: 0,
+          //     rules: [
+          //       { dayOfWeek: 1, startTime: '00:10', endTime: '23:59' },
+          //       { dayOfWeek: 1, startTime: '00:00', endTime: '21:59' },
+          //     ],
+          //   },
+          // ];
+        }
+      });
+    },
+    async fetchTemplateName() {
+      let res = await wxApi.request(
+        taskApi.listTemplateNames,
+        'GET',
+        { type: 2, auditStatus: 'pass', pageNum: 1, pageSize: 9999, limit: -1 },
+        {},
+        taskApi.baseUrl
+      );
+      if (this.isSuccess(res)) {
+        this.templates = res.data;
+        //      this.templates = [
+        //   { id: 2000138, name: '东北开户的模板' },
+        //   { id: 2000139, name: '东北开户的模板2' },
+        //   { id: 2000140, name: '东北开户的模板3' },
+        //   { id: 2000141, name: '东北开户的模板4' },
+        //   { id: 2000142, name: '东北开户的模板5' },
+        // ];
+      }
+    },
+    async fetchIntentions() {
+      let res = await wxApi.request(
+        taskApi.intentions,
+        'GET',
+        { templateId: this.taskForm.template },
+        { 'Content-Type': 'application/json' },
+        taskApi.baseUrl
+      );
+      if (this.isSuccess(res)) {
+        this.intentions = res.data.map((a) => ({
+          key: a.intention,
+          value: false,
+        }));
+        //     this.intentions = [
+        //   { intention: 'A[[intent]]', minScore: null, maxScore: null },
+        //   { intention: 'B[[intent]]', minScore: null, maxScore: null },
+        // ].map((a) => ({ key: a.intention, value: false }));
+      }
+    },
+
+    async onSubmitRule() {
+      const nickname = /^[\u4e00-\u9fa5_a-zA-Z0-9_]{4,20}$/;
+      if (!nickname.test(this.ruleForm.name) || !this.ruleForm.name) {
+        this.onDialog('规则名称4-20位，不能包含下划线外特殊字符');
+        return;
+      }
+      const nameExitRes = await this.isNameExists();
+      if (this.isSuccess(nameExitRes)) {
+        if (nameExitRes.data == true) {
+          this.onDialog('规则名称已存在');
+          return;
+        }
+        if (
+          !(this.ruleForm.redialPeriodMin || this.ruleForm.redialPeriodMin == 0)
+        ) {
+          this.onDialog('输入重拨间隔时间');
+          return;
+        }
+        if (this.redialReasonsShow.length == 0) {
+          this.onDialog('请选择重拨范围');
+          return;
+        }
+        this.ruleForm.redialReason = this.redialReasonsShow;
+        this.ruleForm.redialPeriod = this.ruleForm.redialPeriodMin * 60;
+        this.ruleForm.rules = [];
+        for (let i = 1; i <= 7; i++) {
+          this.ruleForm.rules.push({
+            dayOfWeek: i,
+            startTime: this.startTime,
+            endTime: this.endTime,
+            key: `UPDATE_KEY_${i - 1}`,
+            editable: false,
+            dayRowSpan: 1,
+          });
+        }
+        if (this.isDeptmentAccount) {
+          this.ruleForm.departmentId = this.departmentId;
+          this.ruleForm.departmentName = this.departmentName;
+        }
+
+        this.ruleForm.enable = false;
+        this.ruleForm.desc = '';
+
+        const resCreateRule = await this.createRule();
+
+        if (this.isSuccess(resCreateRule)) {
+          await this.fetchRules();
+          this.onClickBeforeStep();
+          this.ruleForm = {
+            redialTimes: 0,
+            redialPeriodMin: 120,
+          };
+          this.redialReasons = [
+            { key: '停机', value: false },
+            { key: '无法接通', value: true },
+            { key: '关机', value: false },
+            { key: '不在服务区', value: true },
+            { key: '正在通话', value: true },
+            { key: '无法判断', value: false },
+            { key: '无人接听', value: true },
+            { key: '忙音', value: true },
+            { key: '空号', value: false },
+            { key: '语音信箱', value: true },
+            { key: '呼叫限制', value: true },
+            { key: '暂停服务', value: true },
+            { key: '外呼失败(超时)', value: false },
+            { key: '外呼失败(超出并发限制)', value: false },
+            { key: '外呼失败(号码错误)', value: false },
+            { key: '外呼失败(正在呼出)', value: false },
+            { key: '外呼失败(session超时)', value: false },
+            { key: '外呼失败(忙音)', value: false },
+            { key: '外呼失败(接通前语言识别异常)', value: false },
+            { key: '外呼失败(分类失败)', value: false },
+            { key: '外呼失败(未打开分类使能)', value: false },
+            { key: '外呼失败(线路异常)', value: false },
+            { key: '外呼失败(错误码)', value: false },
+          ];
+        } else {
+          wx.showToast({
+            title: '规则创建失败',
+            icon: 'none',
+            duration: 2000,
+          });
+        }
+      }
+    },
+    createRuleModal() {
+      const hasAuth = hasAuthority('ROLE_rule_manage:time_edit')(this.account && this.account.authorities);
+      if (hasAuth) {
+        this.standrdStart = '00:00';
+        this.standrdEnd = '23:59';
+        this.endTime = '23:59';
+        this.startTime = '00:00';
+      } else {
+        this.standrdStart = '09:00';
+        this.standrdEnd = '21:00';
+        this.endTime = '21:00';
+        this.startTime = '09:00';
+      }
+      this.onClickAfterStep('createRule');
+    },
+    compositeData() {
+      const hasAuth = hasAuthority('Role_composite_manage:operate')(this.account && this.account.authorities);
+      let voicePacketArray = this.voicePacketArray;
+      let personalData = this.personalData;
+      let data = {};
+      let defaultEngineName = null;
+      let voiceType = 'system';
+
+      let voiceSynthesisType = hasAuth ? 'synthesis' : 'common';
+      if (!personalData.engineName) {
+        if (voicePacketArray['system'].length) {
+          defaultEngineName = voicePacketArray['system'][0].model;
+          voiceType = 'system';
+        } else if (
+          !voicePacketArray['system'].length &&
+          voicePacketArray['def'].length
+        ) {
+          defaultEngineName = voicePacketArray['def'][0].model;
+          voiceType = 'def';
+        } else if (
+          !voicePacketArray['system'].length &&
+          !voicePacketArray['def'].length
+        ) {
+          voiceType = 'common';
+        }
+        data = {
+          voiceType,
+          volume: 3,
+          speed: 27,
+          tone: 50,
+          engineName: defaultEngineName,
+          voiceSynthesisType,
+        };
+      } else {
+        data = { ...personalData, voiceSynthesisType };
+      }
+    },
+    async onSubmitTask() {
+      const nickname = /^[\u4e00-\u9fa5_a-zA-Z0-9_]{4,35}$/;
+      this.taskForm.taskName = this.taskName;
+      this.taskForm.phone = this.phone;
+      if (!nickname.test(this.taskForm.taskName)) {
+        this.onDialog('任务名称4-35位，不能包含下划线外特殊字符');
+        return;
+      }
+      if (this.depts.length > 1 && !this.taskForm.departmentId) {
+        this.onDialog('请选择部门');
+        return;
+      }
+      const nameExitRes = await this.isTaskNameExists();
+      if (this.isSuccess(nameExitRes)) {
+        if (nameExitRes.data == true) {
+          this.onDialog('任务名称已存在');
+          return;
+        }
+        if (!this.taskForm.template) {
+          this.onDialog('请选择话术模板');
+          return;
+        }
+        if (this.taskForm.intentPushEnable) {
+          if (!this.intention) {
+            this.onDialog('请选择意向推送');
+            return;
+          }
+        }
+        if (!this.taskForm.rule) {
+          this.onDialog('请选择规则');
+          return;
+        }
+        if (!this.robotNums) {
+          this.onDialog('请输入大于0的机器人数量');
+          return;
+        }
+        // 数据修改
+        this.taskForm.robot = this.useRobot
+          .map((a) => a.id)
+          .splice(0, this.robotNums);
+
+        // 配置意向推送
+        if (this.taskForm.intentPushEnable) {
+          if (!this.intention) {
+          } else {
+            // this.taskForm.intentPush = ((this.intentions || [] ).filter(a=>a.value)|| []).map(intent=>({
+            //   "intent":intent.key, "targets": [this.wxtarget] 
+            // }));
+            const intentPushObj = {
+              intentList: ((this.intentions || [] ).filter(a=>a.value)|| []).map(intent => intent.key),
+              targets: [this.wxtarget]
+            }
+            this.taskForm.intentPush = [intentPushObj];
+          }
+          this.taskForm.calloutResultEnable = true;
+        }
+        // 其他为满足接口
+
+        this.taskForm.autoAddBlacklistEnable = false;
+        this.taskForm.queue = [];
+        this.taskForm.engineName = null;
+        this.taskForm.isCustomer = true;
+        this.taskForm.startDate = moment().format('YYYY-MM-DD');
+        this.taskForm.taskType = this.useRobot[0].tradeType; // package
+     
+        this.taskForm.templateVoiceSetId = '4000000';
+        this.taskForm.turnToManuals = [];
+
+        // 配置个性化合成参数
+        this.taskForm.volume = 3;
+        this.taskForm.tone = 50;
+        this.taskForm.speed = 27;
+        this.taskForm.voiceSynthesisType = 'common';
+        this.taskForm.voiceType = 'system';
+        this.taskForm = { ...this.taskForm, ...this.compositeData() };
+        this.taskForm.isTotal = this.isTotal;
+        this.taskForm.customerIds = this.customerIds;
+
+        if (this.taskForm.isTotal) {
+          this.taskForm.excludeCustomerIds = this.excludeCustomerIds;
+          this.taskForm.customerIds = this.excludeCustomerIds;
+        }
+        const resCreateTask = await this.createTask();
+        if (this.isSuccess(resCreateTask)) {
+          this.nextTo('True');
+          this.onCloseTaskDialog();
+        } else {
+          this.nextTo('False');
+        }
+      }
+    },
+    onCloseTaskDialog() {
+      this.$emit('close');
+    },
+    nextTo(payload) {
+      wx.navigateTo({
+        url: `/pages/customer/addresult${payload}`,
+      });
+    },
+    onDialog(warns) {
+      this.warnings = warns;
+      this.dialogShow = true;
+    },
+    tapDialogButton(e) {
+      this.dialogShow = false;
+    },
+    bindStarttimeChange(e) {
+      // if (this.diffTime(e.$wx.detail.value, this.standrdStart)) {
+      //   wx.showToast({
+      //     title: '时间不在权限范围内',
+      //     icon: 'none',
+      //     duration: 2000,
+      //   });
+      //   this.startTime = this.standrdStart;
+
+      //   return;
+      // }else{
+        this.startTime = e.$wx.detail.value;
+      // }
+    },
+    bindEndtimeChange(e) {
+      // if (!this.diffTime(e.$wx.detail.value, this.standrdEnd)) {
+      //   if(this.timer){
+      //     clearTimeout(this.timer)
+      //   }
+      //   this.timer = setTimeout(() => {
+      //     wx.showToast({
+      //     title: '时间不在权限范围内',
+      //     icon: 'none',
+      //     duration: 2000,
+      //   });
+      //   }, 400);
+      //   this.endTime = this.standrdEnd;
+
+      //   return;
+      // }else{
+        this.endTime = e.$wx.detail.value;
+      // }
+    },
+     diffTime(a, b) {
+      let aTime = `2020-10-31 ${a}:00`;
+      let bTime = `2020-10-31 ${b}:00`;
+      // 早就true
+      return moment(aTime).diff(moment(bTime)) < 0 ? true : false;
+    },
+    preventTouchMove() {},
+    chooseRedialReason(idx) {
+      this.redialReasons.forEach((a, index) => {
+        if (index == idx) {
+          a.value = !a.value;
+        }
+      });
+    },
+    onHandleCreateTask() {},
+    onClickBeforeStep() {
+      this.dialogName = this.dialogName.slice(0, this.dialogName.length - 1);
+    },
+    onClickAfterStep(name) {
+      this.dialogName = this.dialogName.concat(name);
+    },
+    switch1Change() {
+      this.taskForm.intentPushEnable = !this.taskForm.intentPushEnable;
+    },
+    chooseIntention(idx) {
+      this.intentions.forEach((a, index) => {
+        if (index == idx) {
+          a.value = !a.value;
+        }
+      });
+     
+    },
+    chooseRule(idx, rule) {
+      this.taskForm = {
+        ...this.taskForm,
+        rule: this.rules.filter((a, index) => index == idx)[0].id,
+      };
+      this.$nextTick(() => {
+        this.onClickBeforeStep()
+      })
+    },
+    chooseCaller(caller) {
+      this.taskForm = {
+        ...this.taskForm,
+        callerId: caller.id,
+        callers: [{ callerId: caller.id, ipccId: caller.ipccId, telnum: caller.telnum }]
+      };
+      this.selectedCaller = { ...caller };
+      this.getRobotNum(caller.id);
+      this.robotList();
+      this.$nextTick(() => {
+        this.onClickBeforeStep()
+      })
+    },
+    chooseTemplate(idx) {
+      this.taskForm = {
+        ...this.taskForm,
+        template: this.templates.filter((a, index) => index == idx)[0].id,
+      };
+      this.$nextTick(() => {
+        this.closeTemplate();
+      })
+    },
+    chooseDept(idx) {
+      this.taskForm = {
+        ...this.taskForm,
+        departmentId: this.depts.filter((a, index) => index == idx)[0].id,
+      };
+    },
+    closeDepartment() {
+      // 改变部门的时候改变规则
+      if (this.departmentId != this.taskForm.departmentId) {
+        this.departmentId = this.taskForm.departmentId;
+        this.fetchRules();
+        delete this.taskForm.rule;
+        this.taskForm = { ...this.taskForm };
+        this.inputRobotNum = 0;
+        this.robotList();
+      };
+      this.onClickBeforeStep();
+    },
+  },
+  props: {
+    show: { type: Boolean, default: false },
+    value: {
+      type: Boolean,
+      default: false,
+    },
+
+    customerIds: {
+      type: Array,
+      default: [],
+    },
+    excludeCustomerIds: {
+      type: Array,
+      default: [],
+    },
+    isTotal: {
+      type: Boolean,
+      default: false,
+    },
+    taskName: {
+      type: String,
+      default: '',
+    },
+    phoneName: {
+      type: String,
+      default: '',
+    },
+    phone:{
+      type: String,
+      default: null,
+    }
+  },
+});
+</script>
+<config>
+{
+  usingComponents: {
+    taskHalfScreenDialog: "../../components/taskHalfScreenDialog",
+    pickerSelect: "../../components/select/pickerSelect",
+    customSelect: "../../components/select/customSelect",
+    "mp-form": "module:weui-miniprogram/miniprogram_dist/form/form",
+    "mp-cells": "module:weui-miniprogram/miniprogram_dist/cells/cells",
+    "mp-cell": "module:weui-miniprogram/miniprogram_dist/cell/cell",
+    "mp-slideview": "module:weui-miniprogram/miniprogram_dist/slideview/slideview",
+    "mp-half-screen-dialog": "module:weui-miniprogram/miniprogram_dist/half-screen-dialog/half-screen-dialog",
+    "mp-checkbox-group": "module:weui-miniprogram/miniprogram_dist/checkbox-group/checkbox-group",
+    "mp-checkbox": "module:weui-miniprogram/miniprogram_dist/checkbox/checkbox",
+    "mp-dialog": "module:weui-miniprogram/miniprogram_dist/dialog/dialog",
+
+  }
+}
+</config>
+

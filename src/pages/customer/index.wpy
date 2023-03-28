@@ -1,0 +1,290 @@
+<template>
+  <scroll-view scroll-y="{{isScroll}}">
+    <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="客户管理"></mp-navigation-bar>
+    <div class="container">
+      <div class="header-div">
+        <div class="select-div">
+          <img class="search-img" src="../../assist/customer/search.png" />
+          <input
+            class="search-input"
+            :value="searchInput"
+            @input="onChangeSearchInput"
+            placeholder="请输入客户号码/姓名"
+          />
+        </div>
+      </div>
+      <div class="customer-list">
+        <customerCard
+          v-for="customer in customerList.list || []"
+          :key="customer.id"
+          :customer="customer"
+          :value="allSelected.hasOwnProperty(customer.id) ? allSelected[customer.id] : checkedAll"
+          @change="onChangeRadio"
+          @showDetail="onHandleShowCustomerDetail"
+        />
+        <!-- <customerCard @click="clickTest"/> -->
+      </div>
+      <movable-area @tap="onHandleAddCustomer" v-if="hasCustomerAddAuth">
+        <movable-view class="add-movable" direction="all">
+          <img class="add-customer-btn" src="../../assist/customer/add.png" />
+        </movable-view>
+      </movable-area>
+      <div class="loading-div">
+        <mp-loading type="circle" v-if="refresh"></mp-loading>
+      </div>
+      <div class="opt-div">
+        <!-- <img class="radio-btn" v-show="checkedAll" src="../../assist/customer/radio-selected.png"  @tap="onClickSelectedAll"/>
+        <img class="radio-btn" v-show="!checkedAll" src="../../assist/customer/radio-no-selected.png"  @tap="onClickSelectedAll"/>-->
+        <span class="totalCount">共{{ customerList.totalCount || 0 }}条</span>
+        <button type="primary" class="add-add-button" @tap="onHandleCreateTask"  v-if="hasCreateTaskAuth">
+          创建外呼任务
+        </button>
+      </div>
+      <addTask
+        v-if="showAddTask"
+        :show="showAddTask"
+        @close="onCloseTaskDialog"
+        :isTotal="checkedAll"
+        :customerIds="customerIds"
+        :excludeCustomerIds="excludeCustomerIds"
+        :taskName="taskName"
+        :phoneName ="phoneName"
+        :phone ="searchInput"
+      />
+    </div>
+  </scroll-view>
+</template>
+
+<style lang="less">
+@import './index.less';
+</style>
+
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapMutations } from '@wepy/x';
+import store from '../../store';
+import debounce from 'lodash/debounce';
+import { hasAuthority,numberDesensitization } from '../../utils/utils';
+import { getStorage } from '../../wxapi/main';
+import eventHub from '../../common/eventHub';
+
+wepy.page({
+  store,
+  hooks: {},
+  data: {
+    pageHieght: 100,
+    refresh: false,
+    checkedAll: false,
+    allSelected: {},
+    customerList: {},
+    searchInput: '',
+    pageInfo: {
+      pageNum: 1,
+      pageSize: 10,
+    },
+    showAddTask: false,
+    fiftyList: [],
+    customerIds: [],
+    excludeCustomerIds: [],
+    taskName: '',
+    phoneName:'',
+  },
+  computed: {
+    // ...mapState({
+    //   customerList: (state) => state.customer.customerList,
+    // }),
+    isScroll() {
+      console.log(this.showAddTask);
+      return !this.showAddTask;
+    },
+    totalCount() {
+      return this.customerList.totalCount;
+    },
+    hasCustomerAddAuth() {
+      const account = getStorage('account');
+      return hasAuthority('ROLE_customer_details:add')(account && account.authorities);
+    },
+    hasCreateTaskAuth() {
+      const account = getStorage('account');
+      return hasAuthority('ROLE_customer_details:create_task')(account && account.authorities);
+    }
+  },
+  methods: {
+    ...mapMutations({
+      saveDetailCustomerInfo: 'customer/saveDetailCustomerInfo',
+    }),
+    preventTouchMove() {},
+    onChangeSearchInput: debounce(function (e) {
+      this.pageInfo = {pageNum: 1, pageSize: 10};
+      this.searchInput = e.$wx.detail.value;
+      this.fetchCustomerList('refresh');
+      this.fetchCustomerAll();
+    }, 1000),
+    onChangeRadio({id, value}) {
+      this.allSelected[id] = value;
+      // 与全选按钮联动
+      const keyOfSelected = Object.keys(this.allSelected).filter(key => this.allSelected[key]);
+      const keyOfNoSelected = Object.keys(this.allSelected).filter(key => !this.allSelected[key]);
+      // if (keyOfSelected.length === this.customerList.totalCount) {
+      //   this.checkedAll = true;
+      //   this.allSelected = {};
+      // }
+      if (keyOfNoSelected.length === this.customerList.totalCount) {
+        this.checkedAll = false;
+        this.allSelected = {};
+      }
+
+      if (Object.keys(this.allSelected).length > 0) {
+        this.customerIds = keyOfSelected;
+        this.excludeCustomerIds = keyOfNoSelected;
+      }
+    },
+    onClickSelectedAll() {
+      this.checkedAll = !this.checkedAll;
+      this.allSelected = {};
+
+      // if (this.checkedAll) {
+      //   let tempData = {};
+      //   (this.customerList.list || []).forEach(item => {tempData[item.id] = true});
+      //   this.allSelected = tempData;
+      // } else {
+      //   this.allSelected = {};
+      // }
+    },
+    onHandleShowCustomerDetail(customer) {
+      const params = Object.assign({}, customer);
+      this.saveDetailCustomerInfo(params);
+      this.$navigate('/pages/customer/customerDetail/index', { id: params.id });
+    },
+    onCloseTaskDialog() {
+      this.showAddTask = false;
+      console.log(this.showAddTask);
+    },
+    onHandleAddCustomer(e) {
+      this.$navigate('/pages/customer/customerDetail/customerEdit', {
+        type: 'add',
+      });
+    },
+    fetchCustomerList(type) {
+      this.refresh = true;
+      if (type === 'refresh') {
+        this.customerList = {};
+      }
+      this.$store.dispatch({
+        type: 'customer/fetchCustomerList',
+        payload: {
+          ...this.pageInfo,
+          ...(this.searchInput ? {keywords: this.searchInput} : null)
+        },
+        cb: (data) => {
+          if (data) {
+            const newList = (this.customerList.list || []).concat(data.list);
+            this.customerList = {...data, list: newList};
+          }
+          this.refresh = false;
+        }
+      })
+    },
+    fetchCustomerAll(val) {
+      this.$store.dispatch({
+        type: 'customer/fetchCustomerAll',
+        payload: {
+          pageSize: 5000,
+          pageNum: 1,
+          ...(this.searchInput ? {keywords: this.searchInput} : null)
+        },
+        cb: (list) => {
+          this.fiftyList = list;
+        },
+      });
+    },
+    desensPhone(phone) {
+        const account = getStorage('account');
+        const inDesens = !hasAuthority('ROLE_phone_pools:not_view_number')(account && account.authorities)
+        return phone && inDesens ? numberDesensitization(phone) : phone;
+    },
+    onHandleCreateTask() {
+      const selectedList =
+        Object.keys(this.allSelected || {}).filter(
+          (key) => this.allSelected[key]
+        ) || [];
+      const unselectedList =
+        Object.keys(this.allSelected || {}).filter(
+          (key) => !this.allSelected[key]
+        ) || [];
+      let phoneName = '';
+      let taskName = '';
+      const timeStamp = parseInt(new Date().getTime()/1000);
+      if (this.checkedAll || selectedList.length > 0) {
+        if (!this.checkedAll && selectedList.length > 0) {
+          let selectedPhoneName = this.fiftyList.filter(
+            (a) => a.id == selectedList[0]
+          )[0].phone;
+          if (selectedList.length == 1) {
+            phoneName = `${this.desensPhone(selectedPhoneName)}`;
+            taskName =  `${(selectedPhoneName).substr(-4)}客户呼叫${timeStamp}`;
+          } else {
+            phoneName = `${this.desensPhone(selectedPhoneName)}等${selectedList.length}个号码`;
+            taskName =  `${selectedList.length}个客户呼叫${timeStamp}`;
+          }
+        } else {
+          let phones = [];
+          this.fiftyList.forEach((a) => {
+            if (unselectedList.indexOf(a.id) == -1) {
+              phones.push(a.phone);
+            }
+          });
+          phoneName =
+            this.totalCount - unselectedList.length > 1
+              ? `${this.desensPhone(phones[0])}等${this.totalCount - unselectedList.length}个号码`
+              : `${this.desensPhone(phones[0])}`;
+          taskName = this.totalCount - unselectedList.length > 1
+              ? `${this.totalCount - unselectedList.length}个客户呼叫${timeStamp}`
+              : `${(phones[0]+"").substr(-4)}客户呼叫${timeStamp}`;
+          if (this.totalCount - unselectedList.length > 30000) {
+            wx.showToast({
+              title: '单次创建任务不得超过30000条数据',
+              icon: 'none',
+              duration: 2000,
+            });
+            return;
+          }
+        };
+        this.phoneName = phoneName
+        this.taskName = taskName;
+        this.showAddTask = true;
+      } else {
+        wx.showToast({ title: '请选择客户', icon: 'none', duration: 2000 });
+      }
+    },
+  },
+  // 上拉刷新事件
+  onReachBottom() {
+    if (this.refresh || this.customerList.lastPage) {
+      return;
+    }
+    this.pageInfo = { ...this.pageInfo, pageNum: this.pageInfo.pageNum + 1 };
+    this.fetchCustomerList();
+  },
+  attached() {
+    this.fetchCustomerList();
+    this.fetchCustomerAll();
+    eventHub.$on('refreshCustomerListPage', () => {
+      this.fetchCustomerList('refresh');
+      this.fetchCustomerAll();
+    })
+  }
+});
+</script>
+<config>
+{
+  navigationBarTitleText: '客户管理',
+  navigationStyle: 'custom',
+  usingComponents: {
+    addTask: './addTask',
+    customerCard: './customerCard',
+    "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+    "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+  }
+}
+</config>

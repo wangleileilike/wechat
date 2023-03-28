@@ -1,0 +1,78 @@
+<style lang="less">
+  .picker-div {
+    .placehoder-span {
+      color: rgba(0,0,0,0.65)
+    }
+
+    .picker-img {
+      width: 24rpx;
+      height: 24rpx;
+    }
+  }
+</style>
+<template>
+  <picker mode="multiSelector" @change="onChange" @columnchange="onColumnchange" :value="getValueByIndex" :range="selectData" :range-key="rangKey" :disabled="disabled">
+    <div class="picker-div" :style="{color: disabled?'gray':''}">
+      <span class="placehoder-span">{{placehoder}}</span>
+      <img v-if="!disabled" class="picker-img" src="../../assist/customer/drop-down.png" />
+    </div>
+  </picker>
+</template>
+<script>
+  import wepy from '@wepy/core'
+
+ wepy.component({
+    computed: {
+      getValueByIndex() {
+        if (!this.selectData || this.selectData.length === 0) {
+          return;
+        }
+        let index = [-1, -1];
+        this.selectData[0].forEach((item, itemIndex) => {
+          if (itemIndex == this.value[0]) {
+            index[0] = itemIndex;
+          }
+        });
+        this.selectData[1].forEach((item, itemIndex) => {
+          if (itemIndex == this.value[1]) {
+            index[1] = itemIndex;
+          }
+        });
+        return index;
+      },
+    },
+    methods: {
+      onChange(e) {
+        const indexArr = e.$wx.detail.value;
+        if (indexArr && indexArr[0] >= 0 && indexArr[1] >= 0) {
+          const data1 = this.selectData[0][indexArr[0]].catalogueName;
+          const data2 = this.selectData[1][indexArr[1]].catalogueName;
+          const data = { catalogue: data1, tag: data2 };
+          this.value = indexArr;
+          this.$emit('change', data, indexArr)
+        }
+      },
+      onColumnchange(e) {
+        // 选择分类的时候，改变所选择分类下的标签(即改变第一列的时候，同步改变第二列的下拉显示)
+        const { column, value: index } = e.$wx.detail;
+        if (column === 0) {
+          this.value = [index, -1];
+          this.$emit('columnchange', index);
+        }
+        if (column === 1) {
+          this.value = [this.value[0], index];
+        }
+      }
+    },
+    props: {
+      value: {type: Array, default: []},
+      disabled: {type: Boolean, default: false},
+      selectData: {type: Array, default: []},
+      hasSelect: {type: Array, default: []},
+      index: {type: Number, default: 0},
+      rangKey: {type: String, default: ''},
+      rangValue: {type: String, default: ''},
+      placehoder: {type: String, default: ''},
+    }
+  });
+</script>

@@ -1,0 +1,281 @@
+<style lang="less">
+.headline {
+  color: rgba(255,255,255, 1);
+}
+
+.subtitle {
+  margin-top: 40rpx;
+  font-size: 18px;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(255,255,255,0.85);
+  letter-spacing: 6rpx;
+  text-align: center;
+}
+
+.inputview {
+  margin-top: 40rpx;
+  width: 80%;
+  border-radius: 48rpx;
+  padding-left: 106rpx;
+  box-sizing: border-box;
+  background: #fff;
+  position: relative;
+  input {
+    width: 100%;
+    height: 88rpx;
+    background: #FFFFFF;
+    border-radius: 48rpx;
+  }
+  image {
+    width: 32rpx;
+    height: 32rpx;
+    position: absolute;
+    left: 40rpx;
+    top: 35%;
+  }
+}
+
+.loginWrap {
+  align-items: center;
+  box-sizing: border-box;
+  background: #acb6f0;
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  background-image: linear-gradient(180deg, #1876FF 0%, rgba(24,118,255,0.00) 100%);
+  .loginBack {
+    background-repeat: no-repeat;
+    background-size: 100%;
+    display: flex;
+    flex-direction: column;
+    justify-items: space-between;
+    align-items: center;
+    .picView {
+      image {
+        width: 100%;
+        height: 100%;
+      }
+    }
+    .logoView {
+      width: 256rpx;
+      height: 256rpx;
+    }
+    .titleView {
+      width: 496rpx;
+      height: 62rpx;
+    }
+    .btnView {
+      width: 80%;
+      .loginBtn {
+        width: 100%;
+        height: 100rpx;
+        line-height: 100rpx;
+        margin-top: 48rpx;
+        color: #fff;
+        font-family: PingFangSC-Regular;
+        font-size: 32rpx;
+        background: rgba(255,255,255,0.65);
+        border-radius: 50rpx;
+        box-shadow: 0 24rpx 32rpx -16rpx rgba(24,118,255,0.50);
+    }
+    .loginBtnActive {
+        background-image: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+    }
+    }
+  }
+}
+
+
+</style>
+<template>
+    <div class="loginWrap">
+      <view class="loginBack">
+        <view class="picView logoView">
+          <image src="/static/images/Intelligent outbound call.png" />
+        </view>
+        <view class="picView titleView">
+          <image src="/static/images/title.png" />
+        </view>
+        <view class="subtitle">
+            <text>{{subtitle}}</text>
+        </view>
+        <view class="inputview">
+            <image class="accountImage" src="/static/images/Account.png" />
+            <input focus placeholder-style="color: rgba(0,0,0,0.25);font-family: PingFangSC-Regular;font-size: 28rpx" v-model="account" placeholder="请输入外呼平台账号" />
+        </view>
+        <view class="inputview">
+            <image class="passwordImage" src="/static/images/password.png" />
+            <input password placeholder-style="color: rgba(0,0,0,0.25);font-family: PingFangSC-Regular;font-size: 28rpx" v-model="password" placeholder="请输入登录密码" />
+        </view>
+        <!--按钮-->
+        <view class="btnView">
+          <button wx:if="{{canIUseGetUserProfile}}" class="loginBtn" :class="{ 'loginBtnActive': !disabled }" bindtap="submit" disabled="{{disabled}}" size="default" loading="{{loading}}">绑定账号</button>
+          <button wx:else class="loginBtn" :class="{ 'loginBtnActive': !disabled }" bindgetuserinfo="submit" open-type="getUserInfo" disabled="{{disabled}}" size="default" loading="{{loading}}">绑定账号</button>
+        </view>
+      </view>
+    </div>
+</template>
+
+<script>
+  import wepy from '@wepy/core'
+  import eventHub from '../common/eventHub';
+  import { mapState } from '@wepy/x';
+  import store from '../store';
+  import WXAPI, { setStorage, getStorage } from '../wxapi/main';
+  import JSEncrypt  from '../utils/jsencrypt';
+  import { isDepartmentAccount } from '../utils/enums';
+  import weappJwtDecode, { weBtoa, weAtob } from '../utils/weapp-jwt';
+  var RSA = require('../utils/wx_rsa.js');
+  var CONFIG = require('../utils/config.js');
+  const app = getApp()
+
+  wepy.page({
+    store,
+
+    hooks: {
+      // Page 级别 hook, 只对当前 Page 的 setData 生效。
+      'before-setData': function (dirty) {
+        if (this.account && this.password) {
+            this.disabled = false;
+        } else {
+            this.disabled = true;
+        }
+        return dirty;
+      }
+    },
+
+    onShow() {
+        wx.hideHomeButton();
+    },
+    onLoad() {
+      if (wx.getUserProfile) {
+        this.canIUseGetUserProfile = true;
+      }
+    },
+
+
+    data: {
+        account: '',
+        password: '',
+        subtitle: '- SMART OUTBOUND -',
+        disabled: true,
+        canIUseGetUserProfile: false,
+        loading: false,
+        companyId: ''
+    },
+
+    methods: {
+        submit(e) {
+          //const test = {}?.test?.test;
+          //console.log(test)
+          if (this.canIUseGetUserProfile) {
+            wx.getUserProfile({
+              desc: '获取用户信息绑定帐号',
+              success: (res) => {
+                this.userLogin(res.userInfo);
+              }
+            })
+          } else {
+            this.userLogin(e.$wx.detail.userInfo);
+          }
+        },
+        userLogin(userInfo) {
+          const that = this;
+          if (userInfo) { //授权成功
+            setStorage('userInfo', userInfo)
+            wx.login({
+              success: res => {
+                // 发送 res.code 到后台换取 openId, sessionKey, unionId
+                const account = that.encrypt_rsa(that.account)
+                const password = that.encrypt_rsa(that.password);
+                // 绑定
+                WXAPI.bind(res.code, userInfo.nickName, account, password).then(function(e) {
+                  that.loading = false;
+                  if (e.code === 0) {
+                    setStorage('bindInfo', e.data.account)
+                    wx.login({
+                      success: newWxRes => {
+                        const loginParams = {
+                          grantType: "social",
+                          clientType: "miniapp",
+                          accountType: "thirdparty",
+                          jscode: newWxRes.code
+                        }
+
+                        // 绑定之后进行登录
+                        WXAPI.login(loginParams).then(loginRes => {
+                          if (loginRes.code === 0) {
+                            setStorage('accessInfo', loginRes.data, function() {
+                              const { id } = weappJwtDecode(loginRes.data.token) || {};
+                              that.companyId = id;
+                              // 登录成功之后调取用户信息
+                              WXAPI.getUserInfo({ userId: that.companyId }).then(companyInfoRes => {
+                                if (companyInfoRes.code === 0) {
+                                  setStorage('account', {...companyInfoRes.data, isDepartmentAccount: isDepartmentAccount(companyInfoRes.data.accountTypeId)});
+                                } else {
+                                  wx.showToast({
+                                    title: companyInfoRes.message || '获取用户信息失败',
+                                    image: '../static/images/error.png',
+                                  })
+                                }
+                                wx.reLaunch({
+                                  url: "/pages/home"
+                                })
+                              })
+                              setStorage('token', e.data.token); // 暂时保留
+                            });
+                            
+                          } else {
+                            wx.showToast({
+                                title: "登录失败..",
+                                image: '../static/images/error.png',
+                              })
+                          }
+                        })
+                      }
+                    })
+                  } else {
+                    wx.showToast({
+                      title: e.message,
+                      image: '../static/images/error.png',
+                    })
+                  }
+                }, function(e) {
+                  console.info("绑定出错：", e)
+                  //出错回调
+                  that.loading = false
+                  wx.showToast({
+                    title: "出了点故障..",
+                    image: '../static/images/error.png',
+                  })
+                })                 
+              }
+            })
+          }
+        },
+        encrypt_rsa(e) {
+          var encrypt_rsa = new RSA.RSAKey();
+          encrypt_rsa = RSA.KEYUTIL.getKey(CONFIG.rsa_public_key);
+          var encStr = encrypt_rsa.encrypt(e)
+          encStr = RSA.hex2b64(encStr);
+          return encStr;
+        },
+        thiEncrypt_rsa(e) {
+          const encrypt = new JSEncrypt();
+          encrypt.setPublicKey(CONFIG.thi_login_public_key);
+          return encrypt.encrypt(e);
+        }
+    },
+  });
+</script>
+<config>
+{
+    navigationBarTitleText: '登录',
+    usingComponents: {
+
+    }
+}
+</config>

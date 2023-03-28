@@ -1,0 +1,659 @@
+<template>
+  <scroll-view>
+    <mp-navigation-bar
+      color="{{'rgb(0, 0, 0)'}}"
+      background="white"
+      title="客服报告"
+      loading="{{false}}"
+      back="{{true}}"
+    ></mp-navigation-bar>
+    <view style="min-height: 100vh;">
+      <datePicker :date="date" @changeTime="onChangeTime" :maxRange="90"></datePicker>
+      <view class="card">
+        <text class="text-title">接听结果统计</text>
+        <view v-show="!showTooltip.show" class="block-title">
+          <view class="view-flex" :style="{opacity: selectDict.item1 ? 1 : 0.3}" @tap="setChartData(1)">
+            <view class="legend-1"></view>
+            <text class="legend-text1">接待量</text>
+          </view>
+          <view class="view-flex" :style="{opacity: selectDict.item2 ? 1 : 0.3}" @tap="setChartData(2)">
+            <view class="legend-2"></view>
+            <text class="legend-text2">转人工量</text>
+          </view>
+        </view>
+        <view v-show="showTooltip.show" class="section_31">
+          <view class="text_81">{{ showTooltip.date }}</view>
+          <view class="view-flex">
+            <view  class="view-flex" v-show="selectDict.item1">
+              <view class="group_41"></view>
+              <text class="text_91">接待量：</text>
+              <text class="text_101">{{ showTooltip.data1 }}</text>
+            </view>
+            <view  class="view-flex" v-show="selectDict.item2">
+              <view class="group_51"></view>
+              <text class="text_111">转人工量：</text>
+              <text class="text_121">{{ showTooltip.data2 }}</text>
+            </view>
+          </view>
+        </view>
+        <canvas canvas-id="lineCanvas" disable-scroll="true" class="canvas-div"></canvas>
+        <canvas canvas-id="lineCanvas1" disable-scroll="true" class="canvas-tooltip" bindtouchmove="touchHandler" bindtouchend="touchend"></canvas>
+      </view>
+      <view class="card">
+        <view class="group_8">
+          <view class="text-group_2">
+            <text class="text_21">识别结果统计</text>
+            <text class="text_22">统计维度：</text>
+          </view>
+          <text class="text_23">统计指标：</text>
+        </view>
+        <view class="group_9">
+          <view class="text-wrapper-default" :style="{'background-color': categoryIndex === 0 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}">
+            <text class="text-default" :style="{color: categoryIndex === 0 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" @tap="searchConditionChange('category', 0)">客户提问</text>
+          </view>
+          <view class="text-wrapper-default" :style="{'background-color': categoryIndex === 1 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}">
+            <text class="text-default" :style="{color: categoryIndex === 1 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" @tap="searchConditionChange('category', 1)">问题分类</text>
+          </view>
+          <view class="text-wrapper-default button-left" :style="{'background-color': indicatorIndex === 0 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}">
+            <text class="text-default" :style="{color: indicatorIndex === 0 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" @tap="searchConditionChange('indicator', 0)">询问次数</text>
+          </view>
+          <view class="text-wrapper-default" :style="{'background-color': indicatorIndex === 1 ? 'rgba(24,118,255,0.1)' : 'rgba(246,248,249)'}">
+            <text class="text-default" :style="{color: indicatorIndex === 1 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" @tap="searchConditionChange('indicator', 1)">转人工次数</text>
+          </view>
+        </view>
+        <view class="group_10">
+          <view class="group_11">
+            <text class="text_28">{{ categoryTitle }}</text>
+            <view class="image-text_2">
+              <text class="text-group_3">{{ indicatorTitle }}</text>
+              <img v-show="sorterDict[indicatorIndex][categoryIndex]" @tap="sorterFunc(false)" class="group_12" src="../../assist/overview/descend.png" />
+              <img v-show="!sorterDict[indicatorIndex][categoryIndex]" @tap="sorterFunc(true)" class="group_12" src="../../assist/overview/ascend.png" />
+            </view>
+          </view>
+        </view>
+        <view class="group_13">
+          <view v-for="item in listData" class="text-wrapper_11">
+            <view class="text_29" :style="{color: categoryIndex === 0 ? 'rgba(24,118,255,1)' : 'rgba(0,0,0,0.65)'}" @tap="jumpKnowledge(item)">
+              {{ item[categoryFieldDict[categoryIndex]] }}
+            </view>
+            <view class="text_30">{{ item.number }}</view>
+          </view>
+          <view v-show="listData.length === 0" class="text-wrapper_nodata">
+            <view class="text-default">暂无数据</view>
+          </view>
+        </view>
+        <view class="text-wrapper_15">
+          <text class="text_37">注：表格中仅会统计指标排序前50的客户提问</text>
+        </view>
+      </view>
+    </view>
+  </scroll-view>
+</template>
+<script>
+import wepy from '@wepy/core';
+import store from '@/store/index';
+import wxCharts from '../../utils/wxcharts'
+import { formatTime } from '../../utils/format'
+
+wepy.page({
+  store,
+  data: {
+    date: [formatTime(new Date() - 6 * 24 * 3600 * 1000, 'yyyy-MM-dd'), formatTime(new Date(), 'yyyy-MM-dd')],
+    lineChart: null,
+    categoryIndex: 0,
+    indicatorIndex: 0,
+    categoryTitle: '客户提问',
+    indicatorTitle: '询问次数',
+    listData: [],
+    allListData: null,
+    categoryFieldDict: {0: 'topicName', 1: 'keyword'},
+    sorterDict: {
+      0: {
+        0: true,
+        1: true,
+      },
+      1: {
+        0: true,
+        1: true,
+      },
+    },
+    chartData: {categories: [], data1: [], data2: []},
+    showTooltip: {
+      show: false,
+      date: '',
+      data1: 0,
+      data2: 0,
+    },
+    selectDict: {
+      item1: true,
+      item2: true,
+    },
+    source: '',
+  },
+  methods: {
+    touchHandler(e) {
+      this.lineChart.showToolTip(e, {
+        format: function (item, category) {
+          if (item.name === '接待量') {
+            this.showTooltip.data1 = item.data;
+          } else if (item.name === '转人工量') {
+            this.showTooltip.data2 = item.data;
+          }
+          this.showTooltip.date = category;
+          this.showTooltip.show = true;
+        }.bind(this)
+      });
+    },
+    touchend() {
+      setTimeout(() => {
+        this.showTooltip.show = false;
+        const context = wx.createCanvasContext('lineCanvas1');
+        context.clearRect(0, 0, 340, 200);
+        context.draw();
+      }, 1000);
+    },
+    getAnswerStatics() {
+      this.showTooltip.show = false;
+      this.$store.dispatch({
+        type: 'overview/fetchAnswerResult',
+        payload: {
+          source: this.source,
+          // source: 'b_zhengquan_ths_dianhua',
+          name: 'mobileData',
+          startTime: this.date[0],
+          endTime: this.date[1],
+        },
+        cb: (data) => {
+          this.chartData = {categories: [], data1: [], data2: []};
+          data.forEach((item) => {
+            this.chartData.categories.push(item.date);
+            this.chartData.data1.push(item.index.voiceRealSession);
+            this.chartData.data2.push(item.index.voiceSessionWithTransfer);
+          })
+          const series = [{
+            name: '接待量',
+            data: this.chartData.data1,
+          },{
+            name: '转人工量',
+            data: this.chartData.data2,
+          }];
+          this.lineChart.updateData({
+            categories: this.chartData.categories,
+            series: series
+          });
+        },
+      });
+    },
+    getRecognitionStatics() {
+      this.$store.dispatch({
+        type: 'overview/fetchRecognitionResult',
+        payload: {
+          source: this.source,
+          // source: 'b_zhengquan_ths_dianhua',
+          name: this.indicatorIndex === 0 ? 'mobileDataHotTopic' : 'mobileDataArtificialHotTopic',
+          startTime: this.date[0],
+          endTime: this.date[1],
+        },
+        cb: (data) => {
+          this.allListData = data;
+          this.sorterDict[this.indicatorIndex] = {0: true, 1: true};
+          const dataDict = {
+            0: 'popular',
+            1: 'categoryForm',
+          }
+          this.listData = data[dataDict[this.categoryIndex]];
+        },
+      });
+    },
+    searchConditionChange(type, index) {
+      if (type === 'category') {
+        this.categoryIndex = index;
+        const categoryDict = {
+          0: '客户提问',
+          1: '问题分类',
+        };
+        const dataDict = {
+          0: 'popular',
+          1: 'categoryForm',
+        };
+        this.categoryTitle = categoryDict[index];
+        this.listData = this.allListData[dataDict[this.categoryIndex]];
+      } else if (type === 'indicator') {
+        this.indicatorIndex = index;
+        const indicatorDict = {
+          0: '询问次数',
+          1: '转人工次数',
+        };
+        this.indicatorTitle = indicatorDict[index]
+        this.getRecognitionStatics();
+      }
+    },
+    onChangeTime(e) {
+      if (e.type === 'start') {
+        this.date[0] = e.value;
+      } else if (e.type === 'end') {
+        this.date[1] = e.value;
+      } else if (e.type === 'select') {
+        this.date = e.value;
+      }
+      this.getAnswerStatics();
+      this.getRecognitionStatics();
+    },
+    sorterFunc(bool) {
+      this.sorterDict[this.indicatorIndex][this.categoryIndex] = bool;
+      this.listData = [...this.listData.reverse()];
+    },
+    jumpKnowledge(name) {
+      if (this.categoryIndex === 0) {
+        this.$navigate(`/pages/callbox/callinConfig/knowledge?name=${name[this.categoryFieldDict[this.categoryIndex]]}&source=${this.source}`);
+      }
+    },
+    setChartData(type) {
+      const series = [];
+      if (type === 1) {
+        this.selectDict.item1 = !this.selectDict.item1;
+      } else if (type === 2) {
+        this.selectDict.item2 = !this.selectDict.item2;
+      }
+      if (this.selectDict.item1 && this.selectDict.item2) {
+        series.push({ name: '接待量', data: this.chartData.data1, color: '#5B8FF9'});
+        series.push({ name: '转人工量', data: this.chartData.data2, color: '#5AD8A6'});
+      } else if (this.selectDict.item1 && !this.selectDict.item2) {
+        series.push({ name: '接待量', data: this.chartData.data1, color: '#5B8FF9'});
+      } else if (!this.selectDict.item1 && this.selectDict.item2) {
+        series.push({ name: '转人工量', data: this.chartData.data2, color: '#5AD8A6'});
+      } else if (!this.selectDict.item1 && !this.selectDict.item2) {
+        series.push({ name: '', data: [0], color: '#cccccc'});
+      }
+      this.lineChart.updateData({
+        categories: this.chartData.categories,
+        series: series
+      });
+    }
+  },
+
+  onLoad(option) {
+    const { source } = option;
+    this.source = source;
+    this.lineChart = new wxCharts({
+      canvasId: 'lineCanvas',
+      canvasTooltipId: 'lineCanvas1',
+      type: 'line',
+      categories: [''],
+      animation: false,
+      series: [{ name: '', data:  [0], color: '#cccccc', }],
+      xAxis: {
+        disableGrid: true,
+        gridColor: '#000000',
+      },
+      yAxis: {
+        format: function (val) {
+          return val;
+        },
+      },
+      width: 340,
+      height: 200,
+      dataLabel: false,
+      dataPointShape: true,
+      extra: {
+        lineStyle: ''
+      }
+    });
+    this.getAnswerStatics();
+    this.getRecognitionStatics();
+  }
+});
+</script>
+<style lang="less" scoped>
+.canvas {
+  width: 100%;
+  height: 360rpx;
+}
+.card {
+  box-shadow: 0px 1px 32px 0px rgba(0, 19, 48, 0.1);
+  background-color: #ffffff;
+  border-radius: 16rpx;
+  width: 656rpx;
+  align-self: center;
+  margin: 20rpx;
+  display: flex;
+  flex-direction: column;
+  padding: 32rpx 23rpx 35rpx 32rpx;
+}
+.text-title {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,1.000000);
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 45rpx;
+  margin-right: 439rpx;
+}
+.block-title {
+  flex-direction: row;
+  display: flex;
+  margin: 26rpx 399rpx 0 4rpx;
+}
+.legend-text1 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+  margin-left: 8rpx;
+}
+.legend-text2 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+  margin-left: 8rpx;
+}
+.canvas-div {
+  width: 661rpx;
+  height: 307rpx;
+  margin-top: 29rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  margin-left: -24rpx;
+}
+.group_8 {
+  width: 456rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  margin: 0 167rpx 0 1rpx;
+  height: 100rpx;
+}
+.text-group_2 {
+  display: flex;
+  flex-direction: column;
+}
+.text_21 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,1.000000);
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 45rpx;
+}
+.text_22 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,1.000000);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+  margin: 20rpx 32rpx 0 0;
+}
+.text_23 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,1.000000);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+  margin-top: 65rpx;
+}
+.group_9 {
+  flex-direction: row;
+  display: flex;
+  margin: 8rpx 31rpx 0 1rpx;
+}
+.text-default {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 24rpx;
+  font-family: PingFangSC-Regular;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 32rpx;
+}
+.text-wrapper-default {
+  background-color: rgba(246,248,249);
+  display: flex;
+  flex-direction: column;
+  padding: 8rpx 20rpx 8rpx 20rpx;
+  border-radius: 4rpx;
+}
+.button-left {
+  margin-left: 45rpx;
+}
+.group_10 {
+  width: 624rpx;
+  align-self: center;
+  margin-top: 24rpx;
+  display: flex;
+  flex-direction: row;
+  margin-left: -33rpx;
+}
+.group_11 {
+  background-color: rgba(246,248,249,1.000000);
+  border-radius: 12rpx 12rpx 0 0;
+  width: 622rpx;
+  border: 1px solid rgba(235,235,235,1);
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  padding: 19rpx 32rpx 18rpx 23rpx;
+}
+.text_28 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 24rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 33rpx;
+}
+.image-text_2 {
+  width: 148rpx;
+  display: flex;
+  justify-content: center;
+}
+.text-group_3 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 24rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 33rpx;
+}
+.group_12 {
+  width: 24rpx;
+  height: 24rpx;
+  display: flex;
+  flex-direction: column;
+  margin: 5rpx 0 4rpx 10rpx;
+}
+.group_13 {
+  width: 624rpx;
+  flex-direction: row;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+}
+.text-wrapper_11 {
+  width: 514rpx;
+  flex-direction: row;
+  display: flex;
+  justify-content: space-between;
+  padding: 0 85rpx 0 24rpx;
+  align-items: center;
+  border-left: 1px solid #EBEBEB;
+  border-right: 1px solid #EBEBEB;
+  border-bottom: 1px solid #EBEBEB;
+}
+.text-wrapper_nodata {
+  width: 514rpx;
+  height: 32px;
+  flex-direction: row;
+  display: flex;
+  justify-content: center;
+  padding: 0 85rpx 0 24rpx;
+  align-items: center;
+  border-left: 1px solid #EBEBEB;
+  border-right: 1px solid #EBEBEB;
+  border-bottom: 1px solid #EBEBEB;
+}
+.text_30 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 24rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 33rpx;
+}
+.text-wrapper_15 {
+  display: flex;
+  flex-direction: row;
+}
+.text_37 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.25);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: center;
+  white-space: nowrap;
+  line-height: 28rpx;
+}
+.legend-1 {
+  width: 16rpx;
+  height: 4rpx;
+  background-color: #5B8FF9;
+  background-size: 20rpx 5rpx;
+  display: flex;
+  flex-direction: column;
+  margin: 14rpx 0 13rpx 0;
+}
+.legend-2 {
+  width: 16rpx;
+  height: 4rpx;
+  background-color: #5AD8A6;
+  background-size: 20rpx 5rpx;
+  display: flex;
+  flex-direction: column;
+  margin: 14rpx 0 13rpx 40rpx;
+}
+.section_31 {
+  background-color: rgba(24,118,255,0.040000);
+  border-radius: 8rpx;
+  flex-direction: row;
+  display: flex;
+  margin: 12rpx 1rpx 0 0;
+  padding: 8rpx 24rpx;
+  justify-content: space-between;
+}
+.text_81 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+}
+.group_41 {
+  width: 16rpx;
+  height: 4rpx;
+  background-color: #5B8FF9;
+  background-size: 20rpx 5rpx;
+  display: flex;
+  flex-direction: column;
+  margin: 14rpx 0 13rpx 164rpx;
+}
+.text_91 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+  margin-left: 8rpx;
+}
+.text_101 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+}
+.group_51 {
+  width: 16rpx;
+  height: 4rpx;
+  background-color: #5AD8A6;
+  background-size: 20rpx 5rpx;
+  display: flex;
+  flex-direction: column;
+  margin: 14rpx 0 13rpx 40rpx;
+}
+.text_111 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.65);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+  margin-left: 8rpx;
+}
+.text_121 {
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 20rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 28rpx;
+}
+.view-flex {
+  display: flex;
+}
+.canvas-tooltip {
+  z-index: 2;
+  position: absolute;
+  margin-top: 126rpx;
+  width: 661rpx;
+  height: 307rpx;
+  margin-left: -24rpx;
+}
+.text_29 {
+  overflow-wrap: break-word;
+  color: rgba(0, 0, 0, 0.85);
+  font-size: 24rpx;
+  font-family: PingFangSC-Regular;
+  text-align: left;
+  display: flex;
+  align-items: center;
+  width: 400rpx;
+  padding: 15rpx;
+  border-right: 1px solid #EBEBEB;
+}
+</style>
+<config>
+ {
+   navigationBarTitleText: '客服报告',
+   navigationBarBackgroundColor: '#ffffff',
+   navigationStyle: 'custom',
+   usingComponents: {
+   "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+   "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+    datePicker: "../../components/datePicker/datePicker",
+   }
+ }
+</config>

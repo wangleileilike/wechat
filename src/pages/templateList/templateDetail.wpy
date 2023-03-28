@@ -1,0 +1,729 @@
+<style lang="less">
+    .template-detail {
+        background: #edf0f4;
+        min-height: 100vh;
+        overflow: hidden;
+    }
+    scroll-view {
+      height: 100%;
+    }
+    .detailContent {
+        background: #edf0f4;
+        box-sizing: border-box;
+        padding: 32rpx 32rpx 0rpx 32rpx;
+        margin-top: 100rpx;
+        margin-bottom: 32rpx;
+        box-shadow: 0px 2px 64px 0px rgba(0, 19, 48, 0.1);
+        .templateTitle {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            padding: 32rpx;
+            border-radius: 16rpx;
+            background: #FFFFFF;
+            .title {
+                font-size: 32rpx;
+                font-family: PingFangSC-Medium, PingFang SC;
+                font-weight: 500;
+                color: rgba(0, 0, 0, 0.85);
+                line-height: 45rpx;
+            }
+            .auditStatus {
+                width: 98rpx;
+                height: 40rpx;
+                background: linear-gradient(135deg, #E9E9E9 0%, #D3D3D3 100%);
+                border-radius: 16rpx 16rpx 16rpx 0rpx;
+                font-size: 22rpx;
+                color: #FFFFFF;
+                display: flex;
+                align-items: center;
+                justify-content: center;
+            }
+            .noPass {
+              background: linear-gradient(135deg, #FFAFAF 0%, #FF5B52 100%);
+            }
+
+            .Audit {
+              background: linear-gradient(135deg, #5CF3CB 0%, #16CC9C 100%);
+              box-shadow: 0rpx 24rpx 32rpx -24rpx rgba(24, 118, 255, 0.5);
+            }
+
+            .Editing {
+              width: 120rpx;
+              height: 56rpx;
+              background: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+              box-shadow: 0px 24rpx 32rpx -24rpx rgba(24, 118, 255, 0.5);
+              border-radius: 8rpx;
+            }
+        }
+        .nopassTitle {
+          padding: 32rpx 32rpx 14rpx;
+          border-radius: 16rpx 16rpx 0 0;
+        }
+        .describe {
+          font-size: 28rpx;
+          font-family: PingFangSC-Regular, PingFang SC;
+          font-weight: 400;
+          color: #FF5B52;
+          background: #FFFFFF;
+          box-sizing: border-box;
+          padding: 0 32rpx 32rpx;
+          border-radius: 0rpx 0rpx 16rpx 16rpx;
+        }
+    }
+   .voiceContent {
+        background: #ffffff;
+        box-shadow: 0 2px 64px 0 rgba(0, 19, 48, 0.1);
+        height: 96rpx;
+        display: flex;
+        z-index: 99;
+        position: fixed;
+    }
+
+.search-button {
+  width: 295rpx;
+  height: 96rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0, 0, 0, 0.85);
+}
+
+.drop {
+  width: 24rpx;
+  height: 24rpx;
+  margin-left: 8rpx;
+}
+
+.search {
+  padding: 0 32rpx;
+  display: flex;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  box-sizing: border-box;
+}
+.search-icon {
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  width: 96rpx;
+  height: 96rpx;
+  image {
+    width: 35rpx;
+    height: 35rpx;
+  }
+}
+
+.cell-list {
+  .weui-cells {
+    margin-top: 0;
+  }
+}
+
+.cell-list1 {
+  padding-left: 40rpx;
+  box-sizing: border-box;
+}
+.call-result {
+  transition: all 0.3s ease-in-out;
+  position: absolute;
+  width: 750rpx;
+  overflow: hidden;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  font-family: PingFangSC-Regular;
+  font-size: 24rpx;
+  z-index: 99;
+  margin-top: 96rpx;
+  mp-cell {
+    width: 100%;
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.85);
+    line-height: 40rpx;
+    font-size: 28rpx;
+  }
+}
+.call-unselect {
+  background: rgba(24, 118, 255, 0.06);
+  border-radius: 12rpx;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  height: 56rpx;
+  font-family: PingFangSC-Regular;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 16rpx;
+  margin-right: 15.5rpx;
+  font-size: 24rpx;
+  box-sizing: border-box;
+  padding: 12rpx 30rpx;
+  box-sizing: border-box;
+}
+
+.search-on {
+  font-family: PingFangSC-Medium;
+  font-size: 28rpx;
+  color: #1876ff;
+}
+
+.call-button {
+  margin-bottom: 20rpx;
+  display: flex;
+  justify-content: space-between;
+  :nth-child(1) {
+    width: 323rpx;
+    height: 88rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 30rpx;
+    letter-spacing: 0;
+    margin-left: 40rpx;
+    border: 1rpx solid #d1d8e1;
+  }
+  :nth-child(2) {
+    width: 323rpx;
+    height: 88rpx;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    border-radius: 16rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 30rpx;
+    letter-spacing: 0;
+    margin-right: 40rpx;
+    background: #1876ff;
+
+    color: #ffffff;
+  }
+}
+
+.button-on {
+  font-family: PingFangSC-Medium;
+  font-size: 28rpx;
+  color: #1876ff;
+}
+
+.wrap {
+  height: 100%;
+  overflow: hidden;
+  width: 750rpx;
+  z-index: 98;
+  position: absolute;
+}
+
+.searchbar {
+  display: flex;
+  align-items: center;
+  width: 750rpx;
+  padding-left: 20rpx;
+  box-sizing: border-box;
+  .cancel {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: #1876ff;
+    text-align: center;
+    width: 120rpx;
+  }
+}
+
+.loading-div {
+  width: 100%;
+
+  .weui-loadmore {
+    margin: 10rpx 0rpx;
+  }
+}
+
+.scoll-view {
+  overflow: scroll;
+  padding-left: 40rpx;
+  height: 336rpx;
+  box-sizing: border-box;
+}
+
+.scoll-view-unselect {
+  background: rgba(24, 118, 255, 0.06);
+  border-radius: 12rpx;
+  display: inline-block;
+  justify-content: center;
+  align-items: center;
+  font-family: PingFangSC-Regular;
+  color: rgba(0, 0, 0, 0.65);
+  margin-bottom: 16rpx;
+  margin-right: 15.5rpx;
+  font-size: 24rpx;
+  padding: 9rpx 30rpx;
+  box-sizing: border-box;
+  text-align: center;
+}
+
+.call-select {
+  background: rgba(24, 118, 255, 0.12);
+  border: 1rpx solid #1876ff;
+  border-radius: 12rpx;
+  color: #1876ff;
+}
+
+.noVoice {
+  text-align: center;
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium, PingFang SC;
+  font-weight: 500;
+  color: rgba(0, 0, 0, 0.85);
+  line-height: 45rpx;
+}
+
+.voice-scroll {
+  height: 100%;
+}
+.voice-wrap {
+  padding: 0 32rpx;
+  box-shadow: 0rpx 2rpx 64rpx 0rpx rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+}
+
+.voice-cell {
+  background: #FFFF;
+  border-radius: 16rpx;
+  >view {
+    display: flex;
+    border-bottom: 0.5px solid rgba(24, 118, 255, 0.08);
+    justify-content: space-between;
+    min-height: 112rpx;
+    align-items: center;
+    box-sizing: border-box;
+    padding: 34rpx 32rpx;
+    font-size: 32rpx;
+    font-family: PingFangSC-Regular, PingFang SC;
+    font-weight: 400;
+    color: rgba(0, 0, 0, 0.85);
+    max-height: 158rpx;
+  }
+}
+
+.voice-title {
+  width: 62%;
+  text-overflow: ellipsis;
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
+  word-break: break-all;
+  word-wrap: break-word;
+}
+
+.detail-btn {
+  width: 24rpx;
+  height: 24rpx;
+  transform: scaleX(-1);
+}
+
+.voiceFlag {
+  color: #1876FF;
+  font-size: 28rpx;
+}
+
+.activeVoiceFlag {
+  color: rgba(0, 0, 0, 0.25);
+}
+
+
+    
+</style>
+
+<template>
+      <scroll-view class="voice-scroll" scroll-y="true">
+        <mp-navigation-bar ext-class="mp-navagation-div" color="rgb(0, 0, 0)" background="white" title="话术录音" delta="0" @back="backToBeforePage"></mp-navigation-bar>
+        <view class="template-detail">
+            <view class="voiceContent">
+              <div v-if="showSearchBar" class="searchbar">
+                  <taskSearch
+                      @onSearch="onSearch"
+                      placeholder="请输入节点名称/知识名称"
+                  />
+                  <div class="cancel" @tap="showBar">取消</div>
+              </div>
+              <div v-show="!showSearchBar" class="search search-on">
+                  <div
+                      @tap="clickSearch(1)"
+                      class="search-button {{ clickResult == 1 ? 'button-on' : ''}}"
+                  >
+                      录音状态 <image class="drop" src="../../asset/task/drop.png" />
+                  </div>
+                  <div 
+                      v-show="soundCollection && soundCollection.length && soundCollection.length > 1"
+                      @tap="clickSearch(2)"
+                      class="search-button {{ clickResult == 2?'button-on':''}}"
+                  >
+                      声音集 <image class="drop" src="../../asset/task/drop.png" />
+                  </div>
+                  <div class="search-button" v-show="!(soundCollection && soundCollection.length && soundCollection.length > 1)"></div>
+                  <div @tap="showBar" class="search-icon">
+                      <image src="../../asset/task/search.png" />
+                  </div>
+              </div>
+              <div
+                  style=" min-height:{{clickResult != 0?'320rpx':'0rpx'}}"
+                  class="call-result"
+              >
+                  <div v-show="clickResult == 1">
+                      <mp-cells ext-class="cell-list cell-list1">
+                        <mp-checkbox-group multi="{{false}}" @change="onCheckBoxChange('voiceStatus', 'voiceStatusArr', $event)">
+                            <mp-checkbox v-for="item in voiceStatusArr" :key="item.value" :label="item.name" :value="item.value" checked="{{item.checked}}"></mp-checkbox>
+                        </mp-checkbox-group>
+                      </mp-cells>
+                  </div>
+                  <div v-show="clickResult == 2">
+                      <scroll-view
+                          catchtouchmove="preventTouchMove"
+                          scroll-y
+                          class="scoll-view"
+                      >
+                          <mp-cells ext-class="cell-list">
+                            <mp-checkbox-group multi="{{false}}" @change="onCheckBoxChange('voiceSetId','soundCollection', $event)">
+                                <mp-checkbox wx:for="{{soundCollection}}" wx:key="value" :label="item.name" :value="item.value" :checked="item.checked"></mp-checkbox>
+                            </mp-checkbox-group>
+                          </mp-cells>
+                      </scroll-view>
+                  </div>
+              </div>
+          </view>
+          <div v-show="clickResult != 0" class="wrap" @tap="clickSearch(0)"></div>
+          <view class="detailContent">
+            <div class="templateTitle {{ templateInfo.auditStatus === 'noPass' ? 'nopassTitle' : '' }}">
+                <span class="title">{{templateInfo.name}}</span>
+                <span @tap="onAudit(templateInfo.auditStatus)" class="auditStatus {{templateInfo.auditStatus}}">{{
+                  templateInfo.auditStatus === 'Editing' ? '提交审核' :
+                  enums.TEMPLATE_STATUES[templateInfo.auditStatus]
+                  }}</span>
+            </div>
+            <div v-if="templateInfo.auditStatus === 'noPass'" class="describe">
+              {{describe}}
+            </div>
+          </view>
+          <view class="voice-wrap">
+            <view v-if="voiceList.list.length" class="voice-cell">
+              <view v-for="voiceInfo in voiceList.list" :key="voiceInfo.id" @tap="jumpToSoundRecord(voiceInfo)">
+                <div class="voice-title">{{voiceInfo.titleContent}}</div>
+                <div>
+                  <babel class="voiceFlag {{voiceInfo.isHasVoice ? 'activeVoiceFlag' : '' }}">{{voiceInfo.voiceWord}}</babel>
+                  <img class="detail-btn" src="../../assist/customer/detail.png"/>
+                </div>
+              </view>
+            </view>
+          </view>
+          <div class="loading-div" v-if="refresh">
+            <mp-loading type="circle"></mp-loading>
+          </div> 
+        </view>
+      </scroll-view>
+</template>
+
+<script>
+    import wepy from '@wepy/core'
+    import eventHub from '../../common/eventHub';
+    import { mapState, mapMutations } from '@wepy/x';
+    import store from '../../store';
+    import WXAPI, { getStorage } from '../../wxapi/main';
+    import enums from '../../utils/enums';
+    import { findVoiceUrl } from '../../utils/utils';
+    import { find, findIndex } from 'lodash';
+    import { hasAuthority } from '../../utils/utils';
+
+    wepy.page({
+        store,
+        data: {
+           enums,
+           templateId: '',
+           refresh: false,
+           templateInfo: {},
+           voiceList: { list: [] },
+           showSearchBar: false,
+           clickResult: 0,
+           pageInfo: { pageSize: 1000, pageNum: 1 },
+           activeRecord: {},
+           inputValue: '',
+           voiceStatusArr: [
+                { name: '全部', value: '' },
+                { name: '未录音', value: 'noRecord', checked: true },
+                { name: '已录音', value: 'Record' }
+           ],
+           soundCollection: [
+                { name: '默认声音集', value: '4000000', checked: true }
+                ],
+           voiceSetId: '4000000', // 当前查询的声音集录音
+           voiceStatus: 'noRecord', // 录音状态
+           describe: '',
+           hasVoiceConfigAuth: false
+        },
+
+        computed: {
+            isScroll() {
+                return true;
+            },
+        },
+
+        methods: {
+           ...mapMutations({
+            saveVoiceDetail: 'template/saveVoiceDetail',
+          }),
+           fetchVoiceList(type, func) {
+              this.refresh = true;
+              if (type === 'search') {
+                this.voiceList = { list: [] };
+              }
+               this.$store.dispatch({
+                   type: 'template/fetchVoiceList',
+                   payload: { templateId: this.templateId, name: this.inputValue, voiceSetId: this.voiceSetId, ...this.pageInfo, voiceStatus: this.voiceStatus },
+                   cb: data => {
+                      let { list = [] } = data || {};
+                      list = (list || []).map((item, index) => {
+                        item.titleContent = `[${this.enums.VOICE_TEXT_TYPE[item.type]}]${item.name}`;
+                        item.isHasVoice = findVoiceUrl(this.voiceSetId, item.voiceUrls); 
+                        item.voiceWord = item.isHasVoice ? '已录音' : '未录音';
+                        item.indexNumber = `${index + 1 + data.pageSize * (data.pageNo - 1)}/${data.totalCount}`;
+                        return item
+                      });
+                      const newList = [...this.voiceList.list, ...list];
+                      this.voiceList = { ...this.voiceList, ...data, list: newList };
+                      this.refresh = false;
+                      func && func(this.voiceList);
+                   }
+               })
+           },
+           fetchTemplateDetail() {
+                this.$store.dispatch({
+                   type: 'template/fetchTemplateDetail',
+                   payload: { templateId: this.templateId },
+                   cb: data => {
+                       this.templateInfo = data;
+                       this.soundCollection = (data && data.voiceSetInfoList || []).map(item => {
+                         let soundItem = {};
+                         soundItem.name = item.desc;
+                         soundItem.value = item.voiceSetId;
+                         if (item.voiceSetId === "4000000") {
+                           soundItem.checked = true;
+                           this.voiceSetId = item.voiceSetId;
+                         }
+                         return soundItem
+                       });
+                       this.queryAuditHistory(data.auditStatus)
+                   }
+               })
+           },
+           showBar() {
+               this.clickResult = 0;
+               this.showSearchBar = !this.showSearchBar;
+               this.inputValue = '';
+               if (!this.showSearchBar) {
+                  this.pageInfo = { ...this.pageInfo, pageNum: 1, pageSize: 1000 };
+                  this.fetchVoiceList('search')
+               }
+           },
+           clickSearch(value) {
+               if (this.clickResult !== value) {
+                   this.clickResult = value;
+               } else {
+                    this.clickResult = 0;
+                }
+           },
+           onCheckBoxChange(type, dataType, $event) {
+             this[dataType] = this[dataType].map(voice => {
+                voice.checked = voice.value === $event.$wx.detail.value;
+                return voice;
+              });
+              this[type] = $event.$wx.detail.value;
+              this.pageInfo = { pageSize: 1000, pageNum: 1 };
+              this.fetchVoiceList('search');
+           },
+           onSearch(value) {
+             this.voiceList = { list: [] };
+             this.inputValue = value;
+             this.pageInfo = { pageSize: 1000, pageNum: 1 };
+             this.fetchVoiceList('search')
+           },
+           jumpToSoundRecord(voiceInfo) {
+             if (this.hasVoiceConfigAuth) {
+                if (this.templateInfo.auditStatus === 'Audit') {
+                wx.showToast({
+                      title: '审核中的模板不能编辑录音!',
+                      icon: 'none'
+                  });
+              } else {
+                  this.activeRecord = voiceInfo;
+                  this.saveVoiceDetail(voiceInfo);
+                  this.$navigate(`/pages/templateList/soundRecord`, {
+                    templateId: this.templateId,
+                    voiceSetId: this.voiceSetId
+                })
+              }
+             } else {
+               wx.showToast({
+                    title: '无查看录音配置权限!',
+                    icon: 'none'
+                });
+             }
+            },
+            // 判断当前是否是最后一条数据
+            hasNoNext(list, index) {
+              return index === ( list && list.length && list.length - 1)
+            },
+            // 提交审核
+            onAudit(auditStatus) {
+              const _this = this;
+              if (auditStatus === 'Editing') {
+                wx.showModal({
+                  title: '',
+                  content: '提交审核后，在运营人员审核前，不能对模板进行编辑，请确认是否提交审核？',
+                  confirmText: '确认提交',
+                  success(res) {
+                    if (res.confirm) {
+                      _this.$store.dispatch({
+                        type: 'template/auditTemplate',
+                        payload: { templateId: _this.templateId, auditStatus: 'Audit' },
+                        cb: () => {
+                          _this.fetchTemplateDetail();
+                           wx.showToast({
+                              title: '提交审核成功',
+                              icon: 'success'
+                          });
+                          eventHub.$emit('refreshTEmplateList');
+                        }
+                      })                 
+                    }
+                  }
+                })
+              }
+            },
+            queryAuditHistory(auditStatus) {
+              if (auditStatus === 'noPass') {
+                this.$store.dispatch({
+                type: 'template/queryAuditHistory',
+                payload: { templateId: this.templateId },
+                cb: data => {
+                      this.describe = `审核说明：${data[0].auditInfo[0].describe}`;
+                  }
+                })
+              }
+            },
+            refreshTemplateVioceList(voiceInfo, type) {
+              let newVoiceList = this.voiceList.list;
+              let thisVoiceIndex = findIndex(newVoiceList, voiceInfo);
+              //点击上一条
+              if (type === 'pre') {
+                const isFirst = thisVoiceIndex === 0;
+                if (isFirst) {
+                  wx.showToast({
+                    title: '当前已是第一条',
+                    icon: 'none'
+                  })
+                } else {
+                  this.activeRecord = newVoiceList[thisVoiceIndex - 1];
+                  this.saveVoiceDetail(this.activeRecord);
+                }
+              }
+              // 点击下一条
+              if (type === 'next') {
+                const isLast = this.hasNoNext(newVoiceList, thisVoiceIndex); //是否是已经加载出来的列表中的最后一条
+                if (isLast) {
+                  // 最后一页数据都已经加载了（如果没有加载完，就需要在重新调用接口更新列表）
+                  if (this.voiceList.lastPage) {
+                    wx.showToast({
+                      title: '当前已是最后一条',
+                      icon: 'none'
+                    })
+                  } else {
+                    this.pageInfo = { pageSize: 1000, pageNum: this.pageInfo.pageNum+1 }
+                    this.fetchVoiceList('', dataList => {
+                      newVoiceList = dataList.list;
+                      thisVoiceIndex = findIndex(newVoiceList, voiceInfo);
+                      this.activeRecord = newVoiceList[thisVoiceIndex + 1];
+                      this.saveVoiceDetail(this.activeRecord);
+                    });
+                  }
+                } else {
+                  this.activeRecord = newVoiceList[thisVoiceIndex + 1];
+                  this.saveVoiceDetail(this.activeRecord);
+                }
+              }
+        },
+          // 通过接口获取最新的voiceDetail
+          refreshVioceDetail(newVoiceData, oldVoiceData) {
+              newVoiceData.titleContent = oldVoiceData.titleContent;
+              newVoiceData.isHasVoice = findVoiceUrl(this.voiceSetId, newVoiceData.voiceUrls); 
+              newVoiceData.voiceWord = newVoiceData.isHasVoice ? '已录音' : '未录音';
+              newVoiceData.indexNumber = oldVoiceData.indexNumber;
+              this.saveVoiceDetail(newVoiceData); // 更新voiceDetail
+              let { list, ...restValues } =  this.voiceList;
+              const index = findIndex(list || [], oldVoiceData);
+              const newList = JSON.parse(JSON.stringify(list));
+              newList[index] = newVoiceData;
+              this.voiceList = {...restValues, list: newList }
+          },
+           backToBeforePage() {
+            const pages = getCurrentPages();
+            const url = "/pages/templateList/list";
+            if (pages && pages.length > 1) {
+              wx.navigateBack();
+            } else {
+              wx.redirectTo({
+                url: url
+              })
+            }
+          }
+        },
+        onLoad(options) {
+            const { templateId } = options;
+            const account = getStorage('account');
+            this.authorities = account && account.authorities;
+            this.hasVoiceConfigAuth = hasAuthority('ROLE_template_manage:config_voice')(this.authorities); // 查看录音配置详情
+            const scene = decodeURIComponent(options.scene);
+            const sceneTemplateId = scene.split('=')[1];
+            this.templateId = templateId || sceneTemplateId;
+            this.fetchTemplateDetail();
+            this.fetchVoiceList();
+            eventHub.$on('refreshTemplateVioceList', (...args) => this.refreshTemplateVioceList(...args));
+            eventHub.$on('refreshVioceDetail', (...args) => this.refreshVioceDetail(...args));
+        },
+        onUnload() {
+          eventHub.$off('refreshTemplateVioceList');
+          eventHub.$off('refreshVioceDetail');
+        },
+          // 上拉刷新事件
+        onReachBottom() {
+          if (this.refresh || this.voiceList.lastPage) {
+            return;
+          }
+          this.pageInfo = { ...this.pageInfo, pageNum: this.pageInfo.pageNum + 1 };
+          this.fetchVoiceList();
+        },
+        
+        
+  });
+
+</script>
+
+<config>
+{
+    navigationBarTitleText: '话术录音',
+    navigationStyle: 'custom',
+    usingComponents: {
+        "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+        taskSearch: '~Components/taskSearch',
+        "mp-cells": "module:weui-miniprogram/miniprogram_dist/cells/cells",
+        "mp-cell": "module:weui-miniprogram/miniprogram_dist/cell/cell",
+        "mp-checkbox": "module:weui-miniprogram/miniprogram_dist/checkbox/checkbox",
+        "mp-checkbox-group": "module:weui-miniprogram/miniprogram_dist/checkbox-group/checkbox-group",
+        "mp-form": "module:weui-miniprogram/miniprogram_dist/form/form",
+        "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+    },
+}
+</config>
+
+
+

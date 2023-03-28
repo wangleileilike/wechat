@@ -1,0 +1,70 @@
+<style lang="less">
+.searchInput {
+  border: 0px;
+  background: rgba(24, 188, 255, 0.01);
+  height: 50rpx;
+  margin: auto;
+  margin-left: 8rpx;
+  text-align: left;
+  width: 500rpx;
+
+}
+
+.searchSpan {
+  color: #3487ff;
+  width: 150rpx;
+  line-height: 80rpx;
+}
+
+.queryDiv {
+  border-radius: 16rpx;
+  background: rgba(24, 188, 255, 0.04);
+  width: 100%;
+  height: 80rpx;
+  display: flex;
+  box-shadow: 0rpx 1rpx 20rpx 0rpx rgba(0,19,48,0.1);
+}
+
+.search-image{
+  width:34rpx;
+  margin-top:26rpx;
+  margin-left:44rpx;
+  height:30rpx;
+}
+
+.place-holder{
+    font-size: 14px;
+}
+</style>
+<template>
+  <div :style="{'width':width}" class="queryDiv">
+    <image class="search-image" src="../asset/task/search.png" />
+    <input placeholder-class="place-holder" @input="onSearch" v-model="value" :placeholder="placeholder" class="searchInput" />
+  </div>
+</template>
+
+<script>
+import wepy from '@wepy/core';
+wepy.component({
+  data: {
+    value: null,
+    timer:null
+  },
+  methods: {
+
+    onSearch() {
+      if(this.timer){
+        clearTimeout(this.timer)
+      }
+      this.timer = setTimeout(() => {
+        this.$emit('onSearch', this.value);
+      }, 500);
+    },
+  },
+  props: {
+    placeholder: String,
+    width:String
+  },
+});
+</script>
+

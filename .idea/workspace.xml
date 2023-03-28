@@ -1,0 +1,250 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="AutoImportSettings">
+    <option name="autoReloadType" value="SELECTIVE" />
+  </component>
+  <component name="ChangeListManager">
+    <list default="true" id="8f5f3510-7220-4130-bf0e-1c998e75a939" name="Changes" comment="">
+      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/components/datePicker/datePicker.wpy" beforeDir="false" afterPath="$PROJECT_DIR$/src/components/datePicker/datePicker.wpy" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/callbox/callinConfig/knowledge.wpy" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/callbox/callinConfig/knowledge.wpy" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/src/pages/dataReport/callinReport.wpy" beforeDir="false" afterPath="$PROJECT_DIR$/src/pages/dataReport/callinReport.wpy" afterDir="false" />
+    </list>
+    <option name="SHOW_DIALOG" value="false" />
+    <option name="HIGHLIGHT_CONFLICTS" value="true" />
+    <option name="HIGHLIGHT_NON_ACTIVE_CHANGELIST" value="false" />
+    <option name="LAST_RESOLUTION" value="IGNORE" />
+  </component>
+  <component name="PackageJsonUpdateNotifier">
+    <dismissed value="$PROJECT_DIR$/package.json" />
+  </component>
+  <component name="ProjectId" id="2FRY21qaMVJYOYq1V1WKStO5Vml" />
+  <component name="ProjectViewState">
+    <option name="hideEmptyMiddlePackages" value="true" />
+    <option name="showLibraryContents" value="true" />
+  </component>
+  <component name="PropertiesComponent">
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder0" value="0" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder1" value="1" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder2" value="2" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder3" value="3" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder4" value="4" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatOrder5" value="5" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatWidth0" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatWidth1" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatWidth2" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatWidth3" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatWidth4" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_flatWidth5" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder0" value="0" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder1" value="1" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder2" value="2" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder3" value="3" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder4" value="4" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeOrder5" value="5" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth0" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth1" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth2" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth3" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth4" value="310" />
+    <property name="FileHistory.org.jetbrains.idea.svn.history.SvnHistoryProvider_treeWidth5" value="310" />
+    <property name="RunOnceActivity.OpenProjectViewOnStart" value="true" />
+    <property name="RunOnceActivity.ShowReadmeOnStart" value="true" />
+    <property name="WebServerToolWindowFactoryState" value="false" />
+    <property name="last_opened_file_path" value="$PROJECT_DIR$/../电话话机" />
+    <property name="node.js.detected.package.eslint" value="true" />
+    <property name="node.js.detected.package.tslint" value="true" />
+    <property name="node.js.selected.package.eslint" value="(autodetect)" />
+    <property name="node.js.selected.package.tslint" value="(autodetect)" />
+    <property name="nodejs_package_manager_path" value="yarn" />
+    <property name="settings.editor.selected.configurable" value="preferences.pluginManager" />
+    <property name="vue.rearranger.settings.migration" value="true" />
+  </component>
+  <component name="RecentsManager">
+    <key name="CopyFile.RECENT_KEYS">
+      <recent name="D:\miniCallout\src\assist\customer" />
+      <recent name="D:\miniCallout\src\assist\calloutentry" />
+      <recent name="D:\miniCallout\static\images\callbox" />
+    </key>
+    <key name="MoveFile.RECENT_KEYS">
+      <recent name="D:\miniCallout\src\assist\customer" />
+      <recent name="D:\miniCallout\src\assist\calloutentry" />
+    </key>
+  </component>
+  <component name="RunManager" selected="npm.build">
+    <configuration name="build" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="build" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="clean" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="clean" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <configuration name="dev" type="js.build_tools.npm" temporary="true" nameIsGenerated="true">
+      <package-json value="$PROJECT_DIR$/package.json" />
+      <command value="run" />
+      <scripts>
+        <script value="dev" />
+      </scripts>
+      <node-interpreter value="project" />
+      <envs />
+      <method v="2" />
+    </configuration>
+    <recent_temporary>
+      <list>
+        <item itemvalue="npm.build" />
+        <item itemvalue="npm.dev" />
+        <item itemvalue="npm.clean" />
+      </list>
+    </recent_temporary>
+  </component>
+  <component name="SpellCheckerSettings" RuntimeDictionaries="0" Folders="0" CustomDictionaries="0" DefaultDictionary="application-level" UseSingleDictionary="true" transferred="true" />
+  <component name="SvnConfiguration" cleanupOnStartRun="true">
+    <configuration>C:\Users\viruser.v-desktop\AppData\Roaming\Subversion</configuration>
+    <supportedVersion>125</supportedVersion>
+  </component>
+  <component name="SvnFileUrlMappingImpl">
+    <option name="myMappingRoots">
+      <list>
+        <SvnCopyRootSimple>
+          <option name="myVcsRoot" value="D:\miniCallout" />
+          <option name="myCopyRoot" value="D:\miniCallout" />
+        </SvnCopyRootSimple>
+      </list>
+    </option>
+    <option name="myMoreRealMappingRoots">
+      <list>
+        <SvnCopyRootSimple>
+          <option name="myVcsRoot" value="D:\miniCallout" />
+          <option name="myCopyRoot" value="D:\miniCallout" />
+        </SvnCopyRootSimple>
+      </list>
+    </option>
+  </component>
+  <component name="TaskManager">
+    <task active="true" id="Default" summary="Default task">
+      <changelist id="8f5f3510-7220-4130-bf0e-1c998e75a939" name="Changes" comment="" />
+      <created>1664456152776</created>
+      <option name="number" value="Default" />
+      <option name="presentableId" value="Default" />
+      <updated>1664456152776</updated>
+      <workItem from="1664456159167" duration="927000" />
+      <workItem from="1664506123955" duration="12114000" />
+      <workItem from="1664527182705" duration="2667000" />
+      <workItem from="1665191960907" duration="5074000" />
+      <workItem from="1665474400112" duration="274000" />
+      <workItem from="1665489184092" duration="3671000" />
+      <workItem from="1665540421138" duration="16134000" />
+      <workItem from="1665576787762" duration="5787000" />
+      <workItem from="1665626314195" duration="9447000" />
+      <workItem from="1665710772032" duration="24492000" />
+      <workItem from="1665969521673" duration="11910000" />
+      <workItem from="1666057067603" duration="21045000" />
+      <workItem from="1666144230643" duration="8688000" />
+      <workItem from="1666167345440" duration="771000" />
+      <workItem from="1666168182151" duration="680000" />
+      <workItem from="1666168896271" duration="89000" />
+      <workItem from="1666169019899" duration="197000" />
+      <workItem from="1666169544214" duration="6308000" />
+      <workItem from="1666244429322" duration="15158000" />
+      <workItem from="1666316999643" duration="10849000" />
+      <workItem from="1666573701593" duration="11093000" />
+      <workItem from="1666752033447" duration="17961000" />
+      <workItem from="1666836289008" duration="18914000" />
+      <workItem from="1666922069036" duration="2400000" />
+      <workItem from="1667178182635" duration="1099000" />
+      <workItem from="1667212642359" duration="251000" />
+      <workItem from="1667212942981" duration="312000" />
+      <workItem from="1667286464835" duration="82000" />
+      <workItem from="1667286580790" duration="542000" />
+      <workItem from="1667287198621" duration="18000" />
+      <workItem from="1667960572805" duration="7008000" />
+      <workItem from="1668069418825" duration="5381000" />
+      <workItem from="1668389742723" duration="4738000" />
+      <workItem from="1668492107664" duration="990000" />
+    </task>
+    <task id="LOCAL-00001" summary="AIRDHKF-620 feat 增加知识库页面，图片优化 ---朱文豪">
+      <created>1665489362305</created>
+      <option name="number" value="00001" />
+      <option name="presentableId" value="LOCAL-00001" />
+      <option name="project" value="LOCAL" />
+      <updated>1665489362305</updated>
+    </task>
+    <task id="LOCAL-00002" summary="AIRDHKF-620 feat 提交知识库页面，兜底配置页面修改">
+      <created>1666167539672</created>
+      <option name="number" value="00002" />
+      <option name="presentableId" value="LOCAL-00002" />
+      <option name="project" value="LOCAL" />
+      <updated>1666167539672</updated>
+    </task>
+    <task id="LOCAL-00003" summary="AIRZNZJ-1645 fix 配合UI验收，修改样式">
+      <created>1666859649690</created>
+      <option name="number" value="00003" />
+      <option name="presentableId" value="LOCAL-00003" />
+      <option name="project" value="LOCAL" />
+      <updated>1666859649690</updated>
+    </task>
+    <task id="LOCAL-00004" summary="AIRZNZJ-1645 fix 获取知识库接口修改">
+      <created>1666877606620</created>
+      <option name="number" value="00004" />
+      <option name="presentableId" value="LOCAL-00004" />
+      <option name="project" value="LOCAL" />
+      <updated>1666877606620</updated>
+    </task>
+    <option name="localTasksCounter" value="5" />
+    <servers />
+  </component>
+  <component name="TypeScriptGeneratedFilesManager">
+    <option name="version" value="3" />
+  </component>
+  <component name="VcsManagerConfiguration">
+    <MESSAGE value="AIRDHKF-620 feat 增加知识库页面，图片优化 ---朱文豪" />
+    <MESSAGE value="AIRDHKF-620 feat 提交知识库页面，兜底配置页面修改" />
+    <MESSAGE value="AIRZNZJ-1645 fix 配合UI验收，修改样式" />
+    <MESSAGE value="AIRZNZJ-1645 fix 获取知识库接口修改" />
+    <option name="LAST_COMMIT_MESSAGE" value="AIRZNZJ-1645 fix 获取知识库接口修改" />
+  </component>
+  <component name="XDebuggerManager">
+    <breakpoint-manager>
+      <breakpoints>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/src/pages/customer/customerDetail/customerEdit.wpy</url>
+          <line>71</line>
+          <option name="timeStamp" value="9" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/src/pages/templateList/templateDetail.wpy</url>
+          <line>710</line>
+          <option name="timeStamp" value="10" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/src/pages/callbox/callinConfig/voiceSpeech.wpy</url>
+          <line>54</line>
+          <option name="timeStamp" value="12" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/src/pages/callbox/callinConfig/editPrologue.wpy</url>
+          <line>117</line>
+          <option name="timeStamp" value="14" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" type="javascript">
+          <url>file://$PROJECT_DIR$/src/pages/callbox/callinConfig/editPrologue.wpy</url>
+          <line>262</line>
+          <option name="timeStamp" value="16" />
+        </line-breakpoint>
+      </breakpoints>
+    </breakpoint-manager>
+  </component>
+</project>

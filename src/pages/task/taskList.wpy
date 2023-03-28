@@ -1,0 +1,430 @@
+<style lang="less">
+.top {
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  text-align: center;
+  display: flex;
+  justify-content: center;
+}
+.under {
+  background: #fcfdff;
+  // display: flex;
+  // justify-content: center;
+  padding-top: 32rpx;
+  box-sizing: border-box;
+}
+
+.card-option{
+  display: flex;
+  justify-content:center;
+  margin-bottom:32rpx
+}
+
+.card {
+  width: 686rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+  padding: 32rpx 32rpx 27rpx;
+  box-sizing: border-box;
+}
+
+.card-top {
+  display: flex;
+  justify-content: space-between;
+}
+
+.describe-success {
+  background-image: linear-gradient(135deg, #5cf3cb 0%, #16cc9c 100%);
+}
+
+.describe-finish{
+  background-image: linear-gradient(135deg, #E9E9E9 0%, #D3D3D3 100%);
+}
+
+.describe-suspend{
+  background-image: linear-gradient(135deg, #FFAFAF 0%, #FF5B52 100%);
+}
+
+.describe-on{
+  background-image: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+}
+
+.describe-normal{
+border-radius: 16rpx 16rpx 16rpx 0;
+  font-family: PingFangSC-Regular;
+  font-size: 22rpx;
+  color: #ffffff;
+  width: 98rpx;
+  height: 40rpx;
+  text-align: center;
+  line-height: 40rpx;
+}
+
+.taskname {
+  font-family: PingFangSC-Medium;
+  font-size: 34rpx;
+  color: rgba(0, 0, 0, 0.85);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space:nowrap;
+  width:350rpx;
+}
+
+.img-back {
+  width: 24rpx;
+  height: 24rpx;
+  transform: scaleX(-1);
+  margin-left: 14rpx;
+}
+
+.card-mid {
+  display: flex;
+  line-height: 40rpx;
+  margin-top: 16rpx;
+  :nth-child(1) {
+    font-family: PingFangSC-Regular;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.45);
+    margin-right: 16rpx;
+  }
+  :nth-child(2) {
+    font-family: Helvetica;
+    font-size: 28rpx;
+    color: rgba(0, 0, 0, 0.85);
+  }
+}
+
+.card-name {
+  display: flex;
+  justify-content: space-between;
+}
+
+.name-info {
+  margin-top: 35rpx;
+  :nth-child(1) {
+    line-height: 42rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 30rpx;
+    color: rgba(0, 0, 0, 0.85);
+    width:302rpx;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+  :nth-child(2) {
+    width:302rpx;
+    margin-top: 8rpx;
+    line-height: 33rpx;
+    font-family: PingFangSC-Regular;
+    font-size: 24rpx;
+    color: rgba(0, 0, 0, 0.45);
+        white-space:nowrap;
+    overflow:hidden;
+    text-overflow: ellipsis;
+  }
+}
+
+.card-progress-desc {
+  display: flex;
+  justify-content: space-between;
+  margin-top: 53rpx;
+}
+
+.progress-name {
+  font-family: PingFangSC-Regular;
+  font-size: 24rpx;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.progress-value {
+  font-family: Helvetica;
+  font-size: 24rpx;
+  text-align: right;
+  line-height: 29rpx;
+  margin-bottom: 32rpx;
+  color: rgba(0, 0, 0, 0.45);
+}
+
+.card-progress-all{
+  width:622rpx;
+  border-radius: 4rpx;
+  height:8rpx;
+  background: rgba(24,118,255,0.08);
+}
+
+.card-progress-success{
+  width:622rpx;
+  border-radius: 4rpx;
+  height:8rpx;
+  background-image: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+  margin-top:16rpx;
+  position: relative;
+  top: 4rpx;
+
+}
+
+
+.progress-finish{
+  color: #1876ff;
+
+}
+
+
+.loading-div {
+  width: 100%;
+
+  .weui-loadmore {
+    margin: 10rpx 0rpx;
+  }
+}
+
+.tasktopname{
+  display: flex;
+  align-items: center;
+}
+</style>
+
+<template>
+  <mp-navigation-bar color="rgb(0, 0, 0)" background="white" title="外呼任务"></mp-navigation-bar>
+  <div class="top">
+    <taskSearch
+      @onSearch="onSearch"
+      placeholder="请输入任务名称"
+      width="710rpx"
+    ></taskSearch>
+  </div>
+  <div class="under">
+    <div v-for="record in taskList" class="card-option">
+      <div @tap="nextTo(record)" class="card">
+        <div class="card-top">
+          <div class="tasktopname">
+            <a class="taskname">
+              {{ record.taskName }}
+            </a>
+            <image class="img-back" src="../../asset/task/back.png" />
+          </div>
+          <div
+            v-if="taskStaus[record.status] == '待审核' || taskStaus[record.status] =='未开始'"
+            class="describe-normal describe-success"
+          >
+            {{ taskStaus[record.status] }}
+          </div>
+          <div
+            v-if="taskStaus[record.status] == '已结束' || taskStaus[record.status] =='已终止'"
+            class="describe-normal describe-finish"
+          >
+            {{ taskStaus[record.status] }}
+          </div>
+          <div
+            v-if="taskStaus[record.status] == '已暂停' || taskStaus[record.status] == '未通过'"
+            class="describe-normal describe-suspend"
+          >
+            {{ taskStaus[record.status] }}
+          </div>
+          <div
+            v-if="taskStaus[record.status] == '进行中'"
+            class="describe-normal describe-on"
+          >
+            {{ taskStaus[record.status] }}
+          </div>
+        </div>
+        <div class="card-mid">
+          <div>开始时间:</div>
+          <div>{{ record.startDateShow }}</div>
+        </div>
+
+        <div class="card-name">
+          <div class="name-info">
+            <div>{{ record.template && record.template.name }}</div>
+            <div>模板名称</div>
+          </div>
+          <div class="name-info">
+            <div>{{ record.phonePool && record.phonePool.name }}</div>
+            <div>号码池名</div>
+          </div>
+        </div>
+
+        <div class="card-progress-desc">
+          <div class="progress-name">进度条</div>
+          <div
+            v-if="record.finishedNum != record.totalNum"
+            class="progress-value"
+          >
+            <span class="progress-finish">{{ record.finishedNum }}</span
+            >/{{ record.totalNum }}
+          </div>
+          <div
+            v-if="record.finishedNum == record.totalNum"
+            class="progress-value"
+          >
+            <span class="progress-finish">已完成</span>
+          </div>
+        </div>
+
+        <div
+          class="card-progress-success"
+          :style="{ width:  record.progressWidth }"
+        ></div>
+        <div class="card-progress-all"></div>
+      </div>
+    </div>
+  </div>
+  <div class="loading-div">
+    <mp-loading type="circle" v-if="refresh"></mp-loading>
+  </div>
+</template>
+
+<script>
+import wepy from '@wepy/core';
+import wxApi from '@/wxapi/main';
+import * as taskApi from '@/wxapi/taskApi';
+import moment from 'moment';
+wepy.page({
+  config: {
+    navigationBarTitleText: '外呼任务',
+  },
+
+  hooks: {},
+  data: {
+    taskStaus: {
+      1: '未开始',
+      2: '进行中',
+      3: '已暂停',
+      4: '已结束',
+      6: '异常停止',
+      9: '已终止',
+      7: '待审核',
+      10: '未通过',
+      5: '已冻结',
+    },
+    queryCondition: {
+      pageSize: 10,
+      pageNum: 1,
+      taskName: '',
+    },
+    taskList: [],
+    refresh: false,
+  },
+
+  computed: {},
+
+  created() {
+    this.queryTask();
+  },
+  onReachBottom() {
+    this.queryCondition.pageSize += 10;
+    this.queryTask();
+  },
+  methods: {
+    onSearch(value) {
+      this.queryCondition.taskName = value;
+      this.queryTask();
+    },
+    nextTo(payload) {
+      wx.navigateTo({
+        url: `/pages/task/taskInfoList?taskId=${payload.id}&templateId=${payload.template.id}`,
+      });
+    },
+    isSuccess(rm) {
+      return rm && rm.code == 0;
+    },
+    async queryTask() {
+      this.refresh = true;
+      let res = await wxApi.request(
+        taskApi.queryTask,
+        'GET',
+        this.queryCondition,
+        {},
+        taskApi.baseUrl
+      );
+      if (this.isSuccess(res)) {
+        const list = res.data.list || [];
+
+        list.forEach((a) => {
+          if (a.startDate) {
+            a.startDateShow = moment(a.startDate).format('YYYY-MM-DD');
+            a.progressWidth = (a.finishedNum / a.totalNum) * 622 + 'rpx';
+          }
+        });
+        this.taskList = list;
+      };
+      this.refresh = false;
+
+      // const list = [
+      //   {
+      //     id: '5ed45a0d35e9c9004fc03d66',
+      //     taskName: '4个客户呼叫1590974999',
+      //     startDate: 1590940800000,
+      //     status: 9,
+      //     totalNum: 4,
+      //     finishedNum: 0,
+      //     callNum: 0,
+      //     template: {
+      //       name: '石世壮测试模板',
+      //     },
+      //     rule: {
+      //       name: '123467',
+      //     },
+      //     phonePool: {
+      //       name: '号码池159097498921212321',
+      //     },
+      //   },
+      //   {
+      //     id: '5f4ce371c1a0360046e39469',
+      //     taskName: '外呼任务测试20200831',
+      //     startDate: 1598803200000,
+      //     status: 4,
+      //     totalNum: 1,
+      //     finishedNum: 1,
+      //     callNum: 1,
+      //     template: {
+      //       name: '直达模板',
+      //     },
+      //     rule: {
+      //       name: '123467',
+      //     },
+      //     phonePool: {
+      //       name: '测测测测试123',
+      //     },
+      //     createInfo: {
+      //       time: 1598874481224,
+      //     },
+      //   },
+      //   {
+      //     id: '5f4ce371c1a036012329469',
+      //     taskName: '外呼任231',
+      //     startDate: 1598803100000,
+      //     status: 4,
+      //     totalNum: 1,
+      //     finishedNum: 1,
+      //     callNum: 1,
+      //     template: {
+      //       name: '直达模板2',
+      //     },
+      //     rule: {
+      //       name: '1234672',
+      //     },
+      //     phonePool: {
+      //       name: '测测测测试123',
+      //     },
+      //     createInfo: {
+      //       time: 1598874481224,
+      //     },
+      //   },
+      // ];
+    },
+  },
+});
+</script>
+<config>
+{
+    navigationBarTitleText: '外呼任务',
+    navigationStyle: 'custom',
+    usingComponents: {
+      taskSearch: '~Components/taskSearch',
+      "mp-loading": "module:weui-miniprogram/miniprogram_dist/loading/loading",
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+    }
+}
+</config>

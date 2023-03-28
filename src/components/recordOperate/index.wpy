@@ -1,0 +1,435 @@
+<style lang="less">
+    .operate-card {
+        height: 345rpx;
+        background: #FFFFFF;
+        box-shadow: 0px 2px 64px 0px rgba(0, 19, 48, 0.1);
+        display: flex;
+        flex-flow: column;
+        justify-content: center;
+    }
+    .button-text {
+        text-align: center;
+        margin-top: 24rpx;
+        height: 33rpx;
+        font-size: 24rpx;
+        font-family: PingFangSC-Regular, PingFang SC;
+        font-weight: 400;
+        color: #999999;
+        line-height: 33rpx;
+    }
+    .button-wrap {
+        display: flex;
+        justify-content: space-around;
+        align-items: center;
+        width: 100%;
+    }
+    .recordButton {
+        width: 192rpx;
+        height: 96rpx;
+        border-radius: 48rpx;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+    }
+    .startRecord, .uploading, .endRecord {
+        background: linear-gradient(180deg, #1876FF 0%, #14A4FF 100%);
+    }
+    .pre_next {
+        width: 100rpx;
+        height: 70rpx;
+    }
+    .recording {
+        background: #EFF6FF;
+        box-shadow: 0rpx 4rpx 20rpx 0rpx rgba(27, 124, 252, 0.1);
+        border: 4rpx solid #1B7CFC;
+    }
+    .buttom_image {
+        width: 56rpx;
+        height: 56rpx;
+    }
+    .voiceUrlWrap {
+        margin: 12rpx 0 90rpx;
+    }
+
+</style>
+
+<template>
+    <view>
+        <view v-if="audioSrc && (recordStatus === 'done' || recordStatus === 'unstart')" class="voiceUrlWrap">
+            <mp-audio :key="audioSrc" :isShowDuration="false" :src="audioSrc" />
+        </view>
+        <view class="operate-card">
+            <view v-show="recordStatus !== 'done' && recordStatus !== 'unstart'" class="voiceUrlWrap">
+                <mp-timer ref="myTimer" className="timer" :maxTime="10" />
+            </view>       
+            <view class="button-wrap">
+                <img class="pre_next" @tap="handlePreRecord" src="../../assist/template/pre_record.png" />
+                <div v-if="hasEditVoiceAuth && recordStatus === 'unstart'" class="recordButton startRecord" @tap="onStartRecord">
+                    <img class="buttom_image" src="../../assist/template/start_record_button.png" />
+                </div>
+                <div v-if="hasEditVoiceAuth && recordStatus === 'recording'" class="recordButton recording" @tap="onEndRecord" @longpress="onCancelRecord" @touchstart="handleTouchStart" @touchend="handleTouchEnd">
+                    <img class="buttom_image" src="../../assist/template/pause_record_button.png" />
+                </div>
+                <div v-if="hasEditVoiceAuth && recordStatus === 'uploading'" class="recordButton uploading">
+                    <img class="buttom_image" src="../../assist/template/loading_record_button.png" />
+                </div>
+                <div v-if="hasEditVoiceAuth && recordStatus === 'done'" class="recordButton endRecord" @tap="onStartRecord">
+                    <img class="buttom_image" src="../../assist/template/start_record_button.png" />
+                </div>
+                <img class="pre_next" @tap="handleNextRecord" src="../../assist/template/next_record.png" />
+            </view>
+            <view v-if="hasEditVoiceAuth" class="button-text">
+                {{getRecordText}}
+            </view>
+        </view>
+    </view>
+</template>
+
+<script>
+    import wepy from '@wepy/core';
+    import eventHub from '../../common/eventHub';
+    import store from '../../store';
+    import { findVoiceUrl } from '../../utils/utils';
+    import { batchUrl } from '../../wxapi/templateApi';
+    import mainApi, { getAccessToken, getStorage } from '../../wxapi/main';
+    import { fileDownUrl } from '../../services/api';
+    import { hasAuthority } from '../../utils/utils';
+
+    const RecorderManager = wx.getRecorderManager(); // 录音管理器
+    const FileSystemManager = wx.getFileSystemManager(); // 文件管理器
+    const options = {
+        sampleRate: 8000,
+        numberOfChannels: 1,
+        format: 'wav',
+        duration: 600000, // 最大值十分钟
+    }
+    const voiceTitleEnums = {
+        'unstart': '点击按钮开始录制',
+        'recording': '点击结束，长按取消',
+        'uploading': '音频上传中',
+        'done': '点击重新录制'
+    }
+
+    wepy.component({
+        store,
+        data: {
+            recordStatus: 'unstart', // unstart: 未开始  recording: 录音中  uploading:上传中  done: 上传完成
+            startTime: null,
+            endTime: null,
+            audioInfo: {},
+            audioSrc: '',
+            timerRef: null,
+            hasEditVoiceAuth: false,
+            recordTimer: null
+        },
+        props: {
+            voiceDetail: {
+                type: Object,
+                default: {}
+            },
+            templateId: {
+                type: Number,
+                default: 0
+            },
+            voiceSetId: {
+                type: String,
+                default: ''
+            }
+        },
+        computed: {
+            getRecordText() {
+                return voiceTitleEnums[this.recordStatus]
+            }
+        },
+        methods: {
+            // 上一页
+            handlePreRecord() {
+                if (this.recordStatus === 'unstart' || this.recordStatus === 'done') {
+                    eventHub.$emit('refreshTemplateVioceList', this.voiceDetail, 'pre');
+                } else {
+                    wx.showToast({
+                        title: '操作录音中，无法翻页！',
+                        icon: 'none'
+                    });
+                }
+            },
+            // 下一页
+            handleNextRecord() {
+                 if (this.recordStatus === 'unstart' || this.recordStatus === 'done') {
+                    eventHub.$emit('refreshTemplateVioceList', this.voiceDetail, 'next')
+                } else {
+                    wx.showToast({
+                        title: '操作录音中，无法翻页！',
+                        icon: 'none'
+                    });
+                }
+            },
+            handleTouchStart (e) {
+                this.startTime = e.timeStamp; 
+            },
+            handleTouchEnd(e) {
+                this.endTime = e.timeStamp; 
+            },
+            fetchTemplateDetail() {
+                this.$store.dispatch({
+                    type: 'template/fetchTemplateDetail',
+                    payload: { templateId: this.templateId }
+                })
+           },                                             
+            // 获取录音权限
+            getRecordAuth(callback) {
+                wx.getSetting({
+                    success(res) {
+                        const authSetting = res.authSetting;
+                        if (authSetting['scope.record']) {
+                            callback()
+                        } else {
+                            // 获取录音授权
+                            wx.authorize({
+                                scope: 'scope.record',
+                                success() {
+                                    // 用户已经同意小程序使用录音功能，后续调用 wx.startRecord 接口不会弹窗询问
+                                   callback()
+                                }
+                            })
+                        }
+          
+                    }
+                })
+            },
+            startRecordFunc() {
+                if (this.recordTimer) {
+                    clearTimeout(this.recordTimer)
+                }
+                this.recordTimer = setTimeout(() => {
+                    this.getRecordAuth(() => {
+                        RecorderManager.start(options);
+                        RecorderManager.onStart(() => {
+                            wx.showToast({
+                                title: '开始录音...',
+                                icon: 'none'
+                            });
+                            this.recordStatus = 'recording';
+                            this.$refs.myTimer.onStart()
+                        });
+                        RecorderManager.onError(({errMsg}) => {
+                            console.log('录音报错-->', errMsge)
+                            wx.showToast({
+                                title: `录音出错：${errMsg}`,
+                                icon: 'error'
+                            })
+                        })
+                    })
+                }, 400)
+            },
+            // 开始录音
+            onStartRecord() {
+                if (this.audioInfo.audioName) {
+                    this.startRecordFunc()
+                } else {
+                    wx.showToast({
+                        title: '开始获取录音编号...',
+                        icon: 'none'
+                    });
+                    this.formatVoiceId(async () => {
+                        const newVoiceData = await this.fetchVoiceSingleInfo();
+                        if (newVoiceData && newVoiceData.voiceId) {
+                            this.audioInfo.audioName = newVoiceData.voiceId;
+                            this.startRecordFunc();
+                        }
+                    });
+                }
+            },
+            // 结束录音
+            onEndRecord() {
+                const _this = this;
+                if (this.endTime - this.startTime < 350) {      
+                    RecorderManager.stop();
+                    RecorderManager.onStop(file => {
+                        _this.$refs.myTimer.stopTime();
+                        _this.recordStatus = 'uploading';
+                        wx.showLoading({
+                            title: '录音上传中...',
+                            mask: true
+                        });
+                        // 通过临时文件路径保存文件到本地
+                        const { tempFilePath, duration, fileSize } = file || {};
+                        const newPath = `${_this.audioInfo.audioName || Date.now()}.wav`;
+                        FileSystemManager.saveFile({
+                            tempFilePath,
+                            filePath: `${wx.env.USER_DATA_PATH}/${newPath}`,
+                            success(res) {
+                                const { savedFilePath } = res; // 存储后的文件路径 (本地路径)
+                                // 获取本地文件
+                                FileSystemManager.readFile({
+                                    filePath: savedFilePath,
+                                    encoding: 'binary',
+                                    success(fileRes) {
+                                        const { data } = fileRes; // 文件内容
+                                        const paramsForUploadVoice = {
+                                            templateId: _this.templateId,
+                                            uploadSrc: 'record',
+                                            voiceSetId: _this.voiceSetId,
+                                        }
+                                        // 上传录音
+                                        wx.uploadFile({
+                                            url: `${mainApi.thirdparty_url}/${batchUrl}`,
+                                            filePath: `${wx.env.USER_DATA_PATH}/${newPath}`,
+                                            name: 'files',
+                                            header: { 'Authorization': getAccessToken() },
+                                            formData: paramsForUploadVoice,
+                                            success(uploadFileRes) {
+                                                const { statusCode, data } = uploadFileRes;
+                                                const { code } = JSON.parse(data);
+                                                if (code === 0) {
+                                                    wx.hideLoading();
+                                                    wx.showToast({
+                                                        title: '录音上传成功',
+                                                        icon: 'success'
+                                                    });
+                                                    _this.recordStatus = 'done';
+                                                    const that = _this;
+                                                    // 更新一下voiceDetail
+                                                    _this.fetchVoiceSingleInfo('refresh');
+                                                }
+                                            }
+                                        })
+                                    }
+                                })
+                            }
+                                
+                        })
+                    })
+                } 
+            },
+            // 取消录音
+            onCancelRecord() {
+                RecorderManager.stop();
+                RecorderManager.onStop(file => {
+                    wx.showToast({
+                        title: '取消录音',
+                        icon: 'none'
+                    });
+                    this.recordStatus = 'unstart';
+                    this.$refs.myTimer.stopTime();
+                    this.$refs.myTimer.resetTimer();
+                })
+            },
+            // 获取单个录音信息
+            fetchVoiceSingleInfo(fetchType) {
+                const { id, type, voiceId, txt } = this.voiceDetail;
+                const voiceIdParam = voiceId ? { voiceId } : {};
+                return new Promise((resolve, reject) => {
+                    this.$store.dispatch({
+                        type: 'template/fetchVoiceSingleInfo',
+                        payload: { templateId: this.templateId, type, voiceSetId: this.voiceSetId, id, txt, ...voiceIdParam },
+                        cb: newVoiceData => {
+                            if (fetchType === 'refresh') {
+                                this.audioSrc = this.audioInfo.url;
+                                eventHub.$emit('refreshVioceDetail', newVoiceData, this.voiceDetail);
+                            }
+                            resolve(newVoiceData)
+                        }
+                    }) 
+                })
+            },
+            // 获取录音编号
+            formatVoiceId(callback) {
+                const { id, type } = this.voiceDetail;
+                this.$store.dispatch({
+                    type: 'template/formatVoiceId',
+                    payload: { templateId: this.templateId, type, id }, 
+                    cb: res => {
+                        console.log('formatVoiceId接口返回完成--->', res)
+                        callback && callback();
+                    }
+                }) 
+            },
+            // 将.raw后缀的文件名改为.MP3格式
+            formatRaw(str){
+                let newStr = str;
+                // if (str.indexOf('.raw') !== -1) {
+                //     newStr = str.replace(/.raw/g, '.mp3')
+                // } else if(str.indexOf('.RAW') !== -1) {
+                //     newStr = str.replace(/.RAW/g, '.mp3')
+                // }
+                return newStr
+            },
+            // 将录音文件下载到本地
+            downloadFile(url, callback) {
+                const that = this;
+                wx.downloadFile({
+                    url: url,
+                    success(res) {
+                        console.log('下载录音到本地res--->', res)
+                        const { tempFilePath, statusCode } = res;
+                        if (statusCode === 200) {
+                            callback && callback(tempFilePath);
+                        } else {
+                            wx.showToast({
+                                title: "录音下载出错！",
+                                icon: "none"
+                            })
+                        }
+                    }
+                })
+            }
+        },
+        async ready() {
+            const voiceUrl = await findVoiceUrl(this.voiceSetId, this.voiceDetail && this.voiceDetail.voiceUrls || []);
+            if (this.voiceDetail && this.voiceDetail.voiceUrls && this.voiceDetail.voiceUrls.length && voiceUrl) {
+                this.recordStatus = 'done';
+            }
+            console.log('voiceUrl, this.voiceDetail===>', voiceUrl, this.voiceDetail)
+            this.audioInfo = {
+                audioName: this.voiceDetail && this.voiceDetail.voiceId,
+                url: voiceUrl ? `${fileDownUrl}?url=${this.formatRaw(voiceUrl)}&from=miniapp&transformVoice=true&time=${new Date().getTime()}` : '',
+            }
+            const _this = this;
+            this.downloadFile(this.audioInfo.url, tempFilePath => {
+                _this.audioSrc = tempFilePath;         
+            })
+
+            // 获取录音操作权限
+            const account = getStorage('account');
+            this.authorities = account && account.authorities;
+            this.hasEditVoiceAuth = hasAuthority('ROLE_template_manage:edit_voice')(this.authorities); // 编辑录音权限
+        },
+        watch: {
+            'voiceDetail': function(newInfo, oldInfo) {
+                const _this = this;
+                new Promise(resolve => {
+                    // 这是先置为空是为了让播放组件重新加载一次
+                    _this.audioInfo = {
+                        audioName: newInfo && newInfo.voiceId,
+                        url: '',
+                    }
+                    _this.audioSrc = '';
+                    resolve()
+                }).then(() => {
+                    const voiceUrl = findVoiceUrl(_this.voiceSetId, newInfo && newInfo.voiceUrls || []);
+                    _this.audioInfo = {
+                        audioName: newInfo && newInfo.voiceId,
+                        url: voiceUrl ? `${fileDownUrl}?url=${_this.formatRaw(voiceUrl)}&from=miniapp&transformVoice=true&time=${new Date().getTime()}` : '',
+                    }
+                    // _this.audioSrc = _this.audioInfo.url;
+                    const that = _this;
+                    _this.downloadFile(_this.audioInfo.url, tempFilePath => {
+                        that.audioSrc = tempFilePath;         
+                    })
+                    _this.recordStatus = voiceUrl ? 'done' : 'unstart'
+                })
+            }
+        }
+  });
+
+</script>
+
+<config>
+{
+  usingComponents: {
+    "mp-audio": "../tempAudio/index",
+    "mp-timer": "../timer/index",
+  }
+}
+</config>

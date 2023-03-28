@@ -1,0 +1,39 @@
+<style lang="less">
+
+</style>
+<template>
+</template>
+
+<script>
+  import wepy from '@wepy/core'
+  import store from '../store';
+
+  wepy.page({
+    store,
+    hooks: {
+      // Page 级别 hook, 只对当前 Page 的 setData 生效。
+      'before-setData': function (dirty) {
+        return dirty;
+      }
+    },
+
+ 
+    data: {
+     
+    },
+
+    onLoad() {
+      
+    }
+
+  });
+</script>
+<config>
+{
+    navigationBarTitleText: '同花顺智能客服',
+    usingComponents: {
+
+    },
+    
+}
+</config>

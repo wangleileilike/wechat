@@ -1,0 +1,69 @@
+<style lang="less">
+  .picker-div {
+    .placehoder-span {
+      color: rgba(0,0,0,0.65)
+    }
+
+    .picker-img {
+      width: 24rpx;
+      height: 24rpx;
+    }
+  }
+</style>
+<template>
+  <picker @change="onDeptPickerChange" :value="getValueByIndex" :range="getSelectList" :range-key="rangKey" :disabled="disabled">
+    <div class="picker-div" :style="{color: disabled?'gray':''}">
+      <span v-if="getValueByIndex>=0">{{getSelectList[getValueByIndex][rangKey]}}</span>
+      <span v-else class="placehoder-span">{{placehoder}}</span>
+      <img v-if="!disabled" class="picker-img" src="../../assist/customer/drop-down.png"/>
+    </div>
+  </picker>
+</template>
+<script>
+  import wepy from '@wepy/core'
+
+  wepy.component({
+    computed: {
+      getValueByIndex() {
+        if (!this.getSelectList || this.getSelectList.length === 0) {
+          return;
+        }
+        let index = -1;
+        this.getSelectList.forEach((item, itemIndex) => {
+          if (item[this.rangValue] == this.value) {
+            index = itemIndex;
+          }
+        });
+        return index;
+      },
+      getSelectList() {
+        const filterList = (this.selectData || []).filter(item => {
+          const flag = (this.hasSelect || []).some(key => key == item[this.rangValue] && key != this.value)
+          return !flag;
+        })
+        
+        return filterList;
+      }
+    },
+    methods: {
+      onDeptPickerChange(e) {
+        const index = e.$wx.detail.value;
+        if (index >= 0) {
+          const data = this.getSelectList[index];
+          this.value = data[this.rangValue]
+          this.$emit('change', data, this.index)
+        }
+      }
+    },
+    props: {
+      value: {type: String, default: ''},
+      disabled: {type: Boolean, default: false},
+      selectData: {type: Array, default: []},
+      hasSelect: {type: Array, default: []},
+      index: {type: Number, default: 0},
+      rangKey: {type: String, default: ''},
+      rangValue: {type: String, default: ''},
+      placehoder: {type: String, default: ''},
+    }
+  });
+</script>

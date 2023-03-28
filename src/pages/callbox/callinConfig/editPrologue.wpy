@@ -1,0 +1,326 @@
+<template>
+<view>
+  <mp-navigation-bar
+    color="{{'rgb(0, 0, 0)'}}"
+    title="编辑兜底话术"
+    @back="backToBeforePage"
+    delta="0"
+  ></mp-navigation-bar>
+
+  <view class="callbox-list">
+    <view>
+      <text class="text-title">{{speechData.title}}</text>
+      <textarea
+        placeholder="请输入内容"
+        auto-focus
+        :value="speechData.voiceText"
+        @input="bindinput"
+        class="textArea"
+      />
+    </view>
+
+    <view class="header">
+      <view type="primary" class="audition-button">
+        <callbox-audio type="editAudition" width="32rpx" height="32rpx" :params="{voiceType:speechData.voiceType,voiceText:speechData.voiceText}" :audioId="-1" :src="item.voiceUrl"><text class="btn-name">试听</text></callbox-audio>
+      </view>
+      <view type="primary" class="editor-number">
+        {{ speechData.voiceText.length }}/100
+      </view>
+    </view>
+  </view>
+  <view class="opt-div">
+    <button type="primary" class="add-add-button" @tap="onSubmit"><view class="button-text">保存</view></button>
+    <view><view class="text-deafult" @tap="backTextFunc">恢复默认</view></view>
+  </view>
+
+</view>
+</template>
+
+<script>
+import wepy from '@wepy/core';
+import { mapState, mapActions } from '@wepy/x';
+import store from '@/store/index';
+import moment from 'moment';
+import eventHub from '@/common/eventHub';
+
+wepy.page({
+  store,
+  data: {
+    content: '你好，我是人工智能客服，有什么可以帮助您，请讲。',
+    speechData:{
+      title: '',
+      voiceType: '',
+      voiceText: '',
+      index: null,
+      timer: null,
+      page:''
+    },
+    defaultText: '',
+    // radioChecked: false,
+  },
+  computed: {
+    ...mapState({
+      currentBox: (state) => state.callbox.currentBox,
+    }),
+  },
+  onLoad(option) {
+    const { page, title, voiceText, voiceType, index } = option;
+    // console.log(page, title, voiceText, voiceType);
+    this.defaultText = voiceText;
+    this.speechData={
+      page,
+      title,
+      voiceText,
+      voiceType,
+      index
+    }
+  },
+  methods: {
+    ...mapActions({
+      taskSubmit:'callbox/taskSubmit',
+      taskResult:'callbox/taskResult',
+      fetchInitText: 'callbox/fetchInitText'
+    }),
+    bindinput(e){
+      const value=e.$wx.detail.value;
+      if(value.length > 100){
+        this.speechData.voiceText='';
+        this.speechData.voiceText = value.substring(0, 100);
+      }else{
+        this.speechData.voiceText='';
+        this.speechData.voiceText = value;
+      }
+    },
+    onSubmit(){
+      if(!this.speechData.voiceText){
+        wx.showToast({
+              title: '内容不能为空',
+              icon: 'none',
+            });
+      }
+      const params={
+          source:this.currentBox.callinConfig.source,
+          type:14,
+          params:{
+            voiceType:this.speechData.voiceType,
+            text:this.speechData.voiceText,
+            selectedIndex:this.speechData.index,
+          }
+      }
+      this.taskSubmit(params).then(res=>{
+        wx.showLoading({
+          title: '保存中',
+          mask: true
+        })
+        this.getTaskResult(res.data)
+      })
+    },
+    async getTaskResult(taskId){
+      if(this.timer){
+        clearTimeout(this.timer);
+      }
+      try {
+        const res = await this.taskResult({taskId,source:this.currentBox.callinConfig.source,});
+        if(res.code===0){
+          wx.hideLoading()
+          wx.showToast({
+            title: `保存成功！`,
+            icon: 'success',
+            duration: 1000,
+          });
+          setTimeout(() => {
+            wx.navigateBack({
+              success: (res)=> {
+                if(this.speechData.page==='openRemark'){
+                eventHub.$emit('refreshGetOpeningRemarks');
+
+                }else if(this.speechData.page==='voiceSpeech'){
+                  eventHub.$emit('refreshGetVoiceSpeechList');
+                }
+              },
+            });
+          }, 1000);
+        }else if(res.code===1){
+          this.timer=setTimeout(()=>{
+            this.getTaskResult(taskId)
+          },2000)
+        }else{
+          wx.hideLoading();
+          wx.showToast({
+                title: res.msg,
+                icon: 'none'
+              });
+        }
+      } catch (error) {
+
+      }
+    },
+    backTextFunc() {
+      const params={
+        source:this.currentBox.callinConfig.source,
+        voiceType:this.speechData.voiceType,
+        index: this.speechData.index,
+      };
+      this.fetchInitText(params).then(res=>{
+        if (res.code === 0) {
+          this.speechData.voiceText = res.data;
+        }
+      })
+    },
+    backToBeforePage() {
+      if (this.speechData.voiceText !== this.defaultText) {
+        wx.showModal({
+          title: "",
+          content: "编辑内容还没保存，是否确认退出？",
+          cancelText: "取消",
+          confirmText: "确认",
+          confirmColor: "#1876FFFF",
+          cancelColor: "#000000A6",
+          success: (res) => {
+            if (res.confirm) {
+              wx.navigateBack();
+            }
+          }
+        });
+      } else if (this.speechData.voiceText === this.defaultText) {
+        wx.navigateBack();
+      }
+    },
+  },
+  props: {
+  },
+});
+</script>
+<style lang="less" scoped>
+.callbox-list {
+  margin: 32rpx 32rpx;
+  padding: 32rpx;
+  background: #ffffff;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0, 19, 48, 0.1);
+  border-radius: 16rpx;
+  .btn-name{
+    margin-left: 10rpx;
+    font-size: 28rpx;
+    text-align: center;
+  }
+  .audition-button {
+    display: flex;
+    align-items: center;
+    width: 176rpx;
+    height: 64rpx;
+    margin: 32rpx 0 0 0;
+    border-radius: 36rpx;
+    color: #1876ff;
+
+    background: #fff;
+    font-size: 28rpx;
+  }
+  .editor-number {
+    margin: 32rpx 0 0 0;
+    color: #999;
+    font-size: 28rpx;
+  }
+
+  .header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    &:first-child {
+      margin-bottom: 67rpx;
+    }
+    .edit-img,
+    .voice-img {
+      width: 40rpx;
+      height: 40rpx;
+    }
+    .voice-img {
+      margin-right: 8rpx;
+    }
+  }
+}
+.save-btn {
+  margin: 20rpx 30rpx;
+  background: linear-gradient(135deg, #6ba7ff 0%, #1876ff 100%);
+  border-radius: 48rpx;
+}
+.text-title {
+  width: 622rpx;
+  height: 44rpx;
+  overflow-wrap: break-word;
+  color: rgba(0,0,0,0.85);
+  font-size: 32rpx;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 44rpx;
+  font-weight: 600;
+}
+.text-deafult {
+  color: rgba(0,0,0,0.65);
+  margin-left: 290rpx;
+  margin-top: -34rpx;
+  font-size: 24rpx;
+}
+.opt-div {
+  position: fixed;
+  bottom: 0rpx;
+  padding: 0rpx 32rpx;
+  width: 100%;
+  line-height: 104rpx;
+  height: 178rpx;
+  background: #FFFFFF;
+  box-shadow: 0 2rpx 64rpx 0 rgba(0,19,48,0.10);
+  border-radius: 0 0 16rpx 16rpx;
+  font-family: PingFangSC-Regular;
+  font-size: 28rpx;
+  color: rgba(0,0,0,0.85);
+  padding-bottom: calc( constant(safe-area-inset-bottom));
+  padding-bottom: calc( env(safe-area-inset-bottom));
+}
+@supports not(constant(safe-area-inset-bottom)){
+  page{
+    padding-bottom: 84rpx;
+  }
+}
+.button-text {
+  width: 128rpx;
+  height: 45rpx;
+  overflow-wrap: break-word;
+  color: rgba(255,255,255,1);
+  font-size: 32rpx;
+  font-family: PingFangSC-Medium;
+  text-align: left;
+  white-space: nowrap;
+  line-height: 45rpx;
+  margin: 26rpx 0 0 271rpx;
+}
+.add-add-button {
+  line-height: 78rpx;
+  background-image: linear-gradient(135deg, #6BA7FF 0%, #1876FF 100%);
+  font-size: 28rpx;
+  color: #FFFFFF;
+  border-radius: 48rpx;
+  height: 96rpx;
+  display: flex;
+  flex-direction: column;
+  width: 670rpx;
+  margin: 16rpx 10rpx;
+}
+.textArea {
+  font-size: 28rpx;
+  padding: 10rpx 30rpx 20rpx 18rpx;
+  width: 620rpx;
+  height: 280rpx;
+}
+</style>
+<config>
+{
+    navigationBarTitleText: '开场白',
+    navigationBarBackgroundColor: '#ffffff',
+    navigationStyle: 'custom',
+    usingComponents: {
+      "mp-navigation-bar": "module:weui-miniprogram/miniprogram_dist/navigation-bar/navigation-bar",
+      "callbox-audio": "../audio/index",
+    }
+
+}
+</config>

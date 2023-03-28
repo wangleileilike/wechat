@@ -1,0 +1,247 @@
+{
+    "code": 0,
+    "message": "查询成功",
+    "data": {
+        "pageNo": 1,
+        "pageSize": 10,
+        "totalCount": 4,
+        "totalPage": 1,
+        "list": [
+            {
+                "id": "5f4ce371c1a0360046e39469",
+                "taskName": "外呼任务测试20200831",
+                "companyId": 81000262,
+                "departmentId": 0,
+                "startDate": 1598803200000,
+                "status": 4,
+                "backupStatus": 4,
+                "totalNum": 1,
+                "finishedNum": 1,
+                "callNum": 1,
+                "robot": [
+                    1032
+                ],
+                "robotInfo": [
+                    {
+                        "robotId": 1032,
+                        "ipccId": "ipcc.10037",
+                        "telnum": "1010",
+                        "province": null,
+                        "city": null,
+                        "ipccType": "iax",
+                        "enable": true,
+                        "ipccName": "pbxbx-1010-15-限测试使用",
+                        "turnToManual": [],
+                        "callerId": "5f3cb4678ab72600481f37dd",
+                        "callerName": null
+                    }
+                ],
+                "template": {
+                    "name": "直达模板",
+                    "industry": 3,
+                    "id": 2000550,
+                    "voice_set_id": "4000000"
+                },
+                "rule": {
+                    "name": "123467",
+                    "id": 3000138
+                },
+                "phonePool": {
+                    "name": "测测测测试123",
+                    "id": 1112212,
+                    "voiceSetId": "4000000"
+                },
+                "createInfo": {
+                    "time": 1598874481224,
+                    "userName": "石世壮2",
+                    "userId": 81000262
+                },
+                "reportStatus": true,
+                "progress": 100,
+                "intentPush": [],
+                "intentPushEnable": false,
+                "autoAddBlacklistEnable": false,
+                "audit": true,
+                "taskType": "standard",
+                "smsSendNum": 0
+            },
+            {
+                "id": "5f3cb549bb9334004b6a3524",
+                "taskName": "客户呼叫1597814035",
+                "companyId": 81000262,
+                "departmentId": 0,
+                "startDate": 1597766400000,
+                "status": 4,
+                "backupStatus": 4,
+                "totalNum": 1,
+                "finishedNum": 1,
+                "callNum": 1,
+                "robot": [
+                    1032
+                ],
+                "robotInfo": [
+                    {
+                        "robotId": 1032,
+                        "ipccId": "ipcc.10037",
+                        "telnum": "1010",
+                        "province": null,
+                        "city": null,
+                        "ipccType": "iax",
+                        "enable": true,
+                        "ipccName": "pbxbx-1010-15-限测试使用",
+                        "turnToManual": [],
+                        "callerId": "5f3cb4678ab72600481f37dd",
+                        "callerName": null
+                    }
+                ],
+                "template": {
+                    "name": "直达模板",
+                    "industry": 3,
+                    "id": 2000550,
+                    "voice_set_id": "4000000"
+                },
+                "rule": {
+                    "name": "123467",
+                    "id": 3000138
+                },
+                "phonePool": {
+                    "name": "号码池1597814089340",
+                    "id": 1112201,
+                    "voiceSetId": "4000000"
+                },
+                "createInfo": {
+                    "time": 1597814089364,
+                    "userName": "石世壮2",
+                    "userId": 81000262
+                },
+                "reportStatus": true,
+                "progress": 100,
+                "intentPush": [],
+                "intentPushEnable": false,
+                "autoAddBlacklistEnable": false,
+                "audit": true,
+                "taskType": "standard",
+                "smsSendNum": 0
+            },
+            {
+                "id": "5f3cb4e6bb9334004b6a3522",
+                "taskName": "客户呼叫1597813912",
+                "companyId": 81000262,
+                "departmentId": 0,
+                "startDate": 1597766400000,
+                "status": 4,
+                "backupStatus": 4,
+                "totalNum": 1,
+                "finishedNum": 1,
+                "callNum": 1,
+                "robot": [
+                    1032
+                ],
+                "robotInfo": [
+                    {
+                        "robotId": 1032,
+                        "ipccId": "ipcc.10037",
+                        "telnum": "1010",
+                        "province": null,
+                        "city": null,
+                        "ipccType": "iax",
+                        "enable": true,
+                        "ipccName": "pbxbx-1010-15-限测试使用",
+                        "turnToManual": [],
+                        "callerId": "5f3cb4678ab72600481f37dd",
+                        "callerName": null
+                    }
+                ],
+                "template": {
+                    "name": "直达模板",
+                    "industry": 3,
+                    "id": 2000550,
+                    "voice_set_id": "4000000"
+                },
+                "rule": {
+                    "name": "123467",
+                    "id": 3000138
+                },
+                "phonePool": {
+                    "name": "号码池1597813990506",
+                    "id": 1112200,
+                    "voiceSetId": "4000000"
+                },
+                "createInfo": {
+                    "time": 1597813990697,
+                    "userName": "石世壮2",
+                    "userId": 81000262
+                },
+                "reportStatus": true,
+                "progress": 100,
+                "intentPush": [],
+                "intentPushEnable": false,
+                "autoAddBlacklistEnable": false,
+                "audit": true,
+                "taskType": "standard",
+                "smsSendNum": 0
+            },
+            {
+                "id": "5ed45a0d35e9c9004fc03d66",
+                "taskName": "4个客户呼叫1590974999",
+                "companyId": 81000262,
+                "departmentId": 0,
+                "startDate": 1590940800000,
+                "status": 9,
+                "backupStatus": 9,
+                "totalNum": 4,
+                "finishedNum": 0,
+                "callNum": 0,
+                "robot": [
+                    1032
+                ],
+                "robotInfo": [
+                    {
+                        "robotId": 1032,
+                        "ipccId": "ipcc.20021",
+                        "telnum": "3007",
+                        "province": null,
+                        "city": null,
+                        "ipccType": "sip",
+                        "enable": true,
+                        "ipccName": "37freeswitch",
+                        "turnToManual": [],
+                        "callerId": "5e5f11098224e018d29fe6bf",
+                        "callerName": null
+                    }
+                ],
+                "template": {
+                    "name": "石世壮测试模板",
+                    "industry": 0,
+                    "id": 2000382,
+                    "voice_set_id": "4000000"
+                },
+                "rule": {
+                    "name": "123467",
+                    "id": 3000138
+                },
+                "phonePool": {
+                    "name": "号码池1590974989321",
+                    "id": 1111690,
+                    "voiceSetId": "4000000"
+                },
+                "createInfo": {
+                    "time": 1590974989525,
+                    "userName": "石世壮2",
+                    "userId": 81000262
+                },
+                "intentPush": [],
+                "intentPushEnable": false,
+                "autoAddBlacklistEnable": false,
+                "audit": true,
+                "taskType": "standard"
+            }
+        ],
+        "firstResult": 0,
+        "lastPage": true,
+        "nextPage": 1,
+        "prevPage": 1,
+        "firstPage": true
+    },
+    "extra": null
+}
